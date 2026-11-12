@@ -150,8 +150,12 @@
     <string name="label_enable_compression">"Enable compression"</string>
     <string name="label_enable_self_encrypt">"Encrypt to signer"</string>
     <string name="label_hidden_recipients">"Hide recipients"</string>
+    <string name="label_sign_only">"Sign only (clearsign)"</string>
     <string name="snack_hidden_recipients_on">"Recipients will be hidden. The message won't say which keys can decrypt it."</string>
     <string name="snack_hidden_recipients_off">"Recipients will be named in the message."</string>
+    <string name="snack_sign_only_on">"The text will be signed but NOT encrypted. Anyone can read it."</string>
+    <string name="snack_sign_only_off">"The text will be encrypted again."</string>
+    <string name="error_sign_only_no_key">"Select a signature key to clearsign."</string>
     <string name="label_encrypt_filenames">"Encrypt filenames"</string>
     <string name="label_smartpgp_verify">SmartPGP: Verify certificates</string>
     <string name="label_smartpgp_verify_summary">"Verify certificates on SmartPGP Security Tokens against a set of trusted authorities"</string>

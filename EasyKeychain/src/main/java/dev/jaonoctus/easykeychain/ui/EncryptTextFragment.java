@@ -69,6 +69,8 @@ public class EncryptTextFragment
     private boolean mSelfEncrypt;
     private boolean mHiddenRecipients = false;
     private boolean mObfuscateMarkers = false;
+    // Deliberately never saved as a default: a forgotten "sign only" would send text unencrypted.
+    private boolean mSignOnly = false;
 
     private String mMessage = "";
 
@@ -175,6 +177,7 @@ public class EncryptTextFragment
         menu.findItem(R.id.check_enable_self_encrypt).setChecked(mSelfEncrypt);
         menu.findItem(R.id.check_hidden_recipients).setChecked(mHiddenRecipients);
         menu.findItem(R.id.check_obfuscate_markers).setChecked(mObfuscateMarkers);
+        menu.findItem(R.id.check_sign_only).setChecked(mSignOnly);
 
         if (mReturnProcessTextAfterEncrypt) {
             menu.findItem(R.id.encrypt_paste).setVisible(true);
@@ -204,6 +207,12 @@ public class EncryptTextFragment
             Notify.create(getActivity(), mObfuscateMarkers
                     ? R.string.snack_obfuscate_markers_on
                     : R.string.snack_obfuscate_markers_off, Style.OK).show(this);
+        } else if (itemId == R.id.check_sign_only) {
+            mSignOnly = !item.isChecked();
+            item.setChecked(mSignOnly);
+            Notify.create(getActivity(), mSignOnly
+                    ? R.string.snack_sign_only_on
+                    : R.string.snack_sign_only_off, mSignOnly ? Style.WARN : Style.OK).show(this);
         } else if (itemId == R.id.encrypt_copy) {
             hideKeyboard();
             mShareAfterEncrypt = false;
@@ -289,7 +298,17 @@ public class EncryptTextFragment
         EncryptActivity modeInterface = (EncryptActivity) getActivity();
         EncryptModeFragment modeFragment = modeInterface.getModeFragment();
 
-        if (modeFragment.isAsymmetric()) {
+        if (mSignOnly) {
+            // like gpg --clearsign: a cleartext signature, whatever recipients are selected
+            long signingKeyId = modeFragment.isAsymmetric()
+                    ? modeFragment.getAsymmetricSigningKeyId() : Constants.key.none;
+            if (signingKeyId == Constants.key.none) {
+                Notify.create(getActivity(), R.string.error_sign_only_no_key, Notify.Style.ERROR)
+                        .show(this);
+                return null;
+            }
+            data.setSignatureMasterKeyId(signingKeyId);
+        } else if (modeFragment.isAsymmetric()) {
             long[] encryptionKeyIds = modeFragment.getAsymmetricEncryptionKeyIds();
             long signingKeyId = modeFragment.getAsymmetricSigningKeyId();
 

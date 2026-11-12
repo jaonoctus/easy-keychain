@@ -51,4 +51,11 @@
         android:checked="false"
         android:checkable="true" />
 
+    <item
+        android:id="@+id/check_sign_only"
+        android:title="@string/label_sign_only"
+        android:orderInCategory="1"
+        android:checked="false"
+        android:checkable="true" />
+
 </menu>
