@@ -112,8 +112,8 @@ android {
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 34
-        versionCode 60400
-        versionName "6.0.4"
+        versionCode 1
+        versionName "1.0.0"
         applicationId "dev.jaonoctus.easykeychain"
         // the androidjunitrunner is broken regarding coverage, see here:
         // https://code.google.com/p/android/issues/detail?id=170607
