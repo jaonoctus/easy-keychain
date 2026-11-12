@@ -4,14 +4,16 @@ on:
   push:
     branches:
       - master
+      - easy-keychain
   pull_request:
     branches:
       - master
+      - easy-keychain
 
 jobs:
   validation:
     name: Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: gradle/wrapper-validation-action@v1
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/wrapper-validation@v4
