@@ -1,16 +1,11 @@
-**WARNING: This software is no longer actively developed.**
-We will still apply security fixes where reported, and do basic maintenance work, but no new features or will be worked on.
-We will try to consider and merge contributions where possible.
+# EasyKeychain (for Android)
 
-# OpenKeychain (for Android)
+EasyKeychain is an OpenPGP implementation for Android.  
+It is a fork of [OpenKeychain](https://www.openkeychain.org), and is not affiliated with or endorsed by the OpenKeychain project.
 
-OpenKeychain is an OpenPGP implementation for Android.  
-For a more detailed description and installation instructions go to https://www.openkeychain.org .
-
-<a href="https://f-droid.org/repository/browse/?fdid=org.sufficientlysecure.keychain" target="_blank">
-<img src=/graphics/get-it-on-f-droid.png alt="Get it on F-Droid" height="80"/></a>
-<a href="https://play.google.com/store/apps/details?id=org.sufficientlysecure.keychain" target="_blank">
-<img src=/graphics/get-it-on-google-play.png alt="Get it on Google Play" height="80"/></a>
+> [!WARNING]
+> **Alpha software.** EasyKeychain is under active development, and the changes made since it was forked from OpenKeychain have not been audited.
+> Do not rely on it to protect data whose disclosure would put you at risk.
 
 ### Branches
 * The development of OpenKeychain happens in the "master" branch.
