@@ -60,15 +60,13 @@ public class EncryptActivity extends BaseActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.check_use_symmetric: {
-                item.setChecked(!item.isChecked());
-                setModeFragment(item.isChecked());
-                return true;
-            }
-            default: {
-                return super.onOptionsItemSelected(item);
-            }
+        int itemId = item.getItemId();
+        if (itemId == R.id.check_use_symmetric) {
+            item.setChecked(!item.isChecked());
+            setModeFragment(item.isChecked());
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 

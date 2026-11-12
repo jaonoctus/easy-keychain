@@ -312,12 +312,12 @@ public class ViewKeyFragment extends Fragment implements OnMenuItemClickListener
             return false;
         }
 
-        switch (item.getItemId()) {
-            case R.id.autocrypt_forget:
-                int position = displayedContextMenuPosition;
-                displayedContextMenuPosition = null;
-                onClickForgetIdentity(position);
-                return true;
+        int itemId = item.getItemId();
+        if (itemId == R.id.autocrypt_forget) {
+            int position = displayedContextMenuPosition;
+            displayedContextMenuPosition = null;
+            onClickForgetIdentity(position);
+            return true;
         }
 
         return false;
