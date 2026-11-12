@@ -1,4 +1,6 @@
-include ':OpenKeychain'
+rootProject.name = 'easy-keychain'
+
+include ':EasyKeychain'
 include ':nfcsweetspot'
 include ':extern:bouncycastle:pg'
 include ':extern:MaterialChipsInput:library'
