@@ -18,7 +18,6 @@
 package dev.jaonoctus.easykeychain.ui;
 
 
-import java.util.regex.Matcher;
 
 import android.app.Activity;
 import android.content.ClipData;
@@ -148,15 +147,7 @@ public class EncryptDecryptFragment extends Fragment {
                 }
 
                 // see if it looks like a pgp thing
-                Matcher matcher = PgpHelper.PGP_MESSAGE.matcher(clipboardText);
-                boolean animate = matcher.matches();
-
-                // see if it looks like another pgp thing
-                if (!animate) {
-                    matcher = PgpHelper.PGP_CLEARTEXT_SIGNATURE.matcher(clipboardText);
-                    animate = matcher.matches();
-                }
-                return animate;
+                return PgpHelper.containsPgpMessage(clipboardText);
             }
 
             @Override
