@@ -159,6 +159,7 @@ public class EncryptTextFragment
             mSelfEncrypt = prefs.getTextSelfEncrypt();
         }
 
+        mHiddenRecipients = prefs.getEncryptHiddenRecipients();
         mObfuscateMarkers = prefs.getTextObfuscatePgpMarkers();
 
         setHasOptionsMenu(true);
@@ -172,6 +173,7 @@ public class EncryptTextFragment
 
         menu.findItem(R.id.check_enable_compression).setChecked(mUseCompression);
         menu.findItem(R.id.check_enable_self_encrypt).setChecked(mSelfEncrypt);
+        menu.findItem(R.id.check_hidden_recipients).setChecked(mHiddenRecipients);
         menu.findItem(R.id.check_obfuscate_markers).setChecked(mObfuscateMarkers);
 
         if (mReturnProcessTextAfterEncrypt) {
@@ -188,6 +190,13 @@ public class EncryptTextFragment
             toggleEnableCompression(item, !item.isChecked());
         } else if (itemId == R.id.check_enable_self_encrypt) {
             toggleEnableSelfEncrypt(item, !item.isChecked());
+        } else if (itemId == R.id.check_hidden_recipients) {
+            mHiddenRecipients = !item.isChecked();
+            item.setChecked(mHiddenRecipients);
+            Preferences.getPreferences(getActivity()).setEncryptHiddenRecipients(mHiddenRecipients);
+            Notify.create(getActivity(), mHiddenRecipients
+                    ? R.string.snack_hidden_recipients_on
+                    : R.string.snack_hidden_recipients_off, Style.OK).show(this);
         } else if (itemId == R.id.check_obfuscate_markers) {
             mObfuscateMarkers = !item.isChecked();
             item.setChecked(mObfuscateMarkers);

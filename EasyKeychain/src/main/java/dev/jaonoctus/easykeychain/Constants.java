@@ -130,6 +130,7 @@ public final class Constants {
         public static final String FILE_SELF_ENCRYPT = "fileSelfEncrypt";
         public static final String TEXT_USE_COMPRESSION = "useTextCompression";
         public static final String TEXT_SELF_ENCRYPT = "textSelfEncrypt";
+        public static final String ENCRYPT_HIDDEN_RECIPIENTS = "encryptHiddenRecipients";
         public static final String TEXT_OBFUSCATE_PGP_MARKERS = "textObfuscatePgpMarkers";
         public static final String USE_ARMOR = "useArmor";
         // proxy settings
