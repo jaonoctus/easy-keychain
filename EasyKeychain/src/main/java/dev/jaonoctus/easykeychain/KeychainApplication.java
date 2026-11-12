@@ -32,6 +32,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import dev.jaonoctus.easykeychain.keysync.KeyserverSyncManager;
 import dev.jaonoctus.easykeychain.network.TlsCertificatePinning;
 import dev.jaonoctus.easykeychain.provider.TemporaryFileProvider;
+import dev.jaonoctus.easykeychain.ui.util.EdgeToEdgeHelper;
 import dev.jaonoctus.easykeychain.util.PRNGFixes;
 import dev.jaonoctus.easykeychain.util.Preferences;
 import timber.log.Timber;
@@ -46,6 +47,8 @@ public class KeychainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        EdgeToEdgeHelper.register(this);
 
         /*
          * Sets our own Bouncy Castle library as preferred security provider
