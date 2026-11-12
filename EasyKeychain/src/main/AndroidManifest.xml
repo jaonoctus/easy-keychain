@@ -54,10 +54,9 @@
     <!-- CAMERA permission requested by ZXing library -->
 
     <!-- storage group -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <!-- Replaced by the READ_MEDIA_* permissions on sdk33 -->
+    <!-- Only for "file" Uris handed over by other apps on Android 12 and older. Files the user
+         picks go through the system's document picker, which needs no permission, and from
+         Android 13 on there is no permission that would grant access to arbitrary files. -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 

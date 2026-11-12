@@ -27,7 +27,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 
-import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.core.content.ContextCompat;
 
@@ -40,12 +39,6 @@ public class PermissionsUtil {
 
     private static final int PERMISSION_READ_EXTERNAL_STORAGE = 1;
     public static final String[] READ_PERMISSIONS = { permission.READ_EXTERNAL_STORAGE };
-    @RequiresApi(api = VERSION_CODES.TIRAMISU)
-    public static final String[] READ_PERMISSIONS_TIRAMISU = {
-            permission.READ_MEDIA_IMAGES,
-            permission.READ_MEDIA_AUDIO,
-            permission.READ_MEDIA_VIDEO
-    };
 
     /**
      * Request READ_EXTERNAL_STORAGE permission on Android >= 6.0 to read content from "file" Uris.
@@ -59,7 +52,7 @@ public class PermissionsUtil {
     public static boolean checkAndRequestReadPermission(Activity activity, Uri uri) {
         boolean result = checkReadPermission(activity, uri);
         if (!result) {
-            activity.requestPermissions(getReadPermissions(), PERMISSION_READ_EXTERNAL_STORAGE);
+            requestReadPermission(activity, null);
         }
         return result;
     }
@@ -67,16 +60,25 @@ public class PermissionsUtil {
     public static boolean checkAndRequestReadPermission(Fragment fragment, Uri uri) {
         boolean result = checkReadPermission(fragment.getContext(), uri);
         if (!result) {
-            fragment.requestPermissions(getReadPermissions(), PERMISSION_READ_EXTERNAL_STORAGE);
+            requestReadPermission(null, fragment);
         }
         return result;
     }
 
-    private static String[] getReadPermissions() {
+    /**
+     * From Android 13 on, READ_EXTERNAL_STORAGE is gone and nothing replaces it for our purpose:
+     * the READ_MEDIA_* permissions only cover photos, videos and audio, not key or message files.
+     * A "file" Uri can not be read there, so say so instead of asking for a permission that
+     * would not help. Files picked through the document picker are not affected.
+     */
+    private static void requestReadPermission(Activity activity, Fragment fragment) {
         if (Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
-            return READ_PERMISSIONS_TIRAMISU;
+            Context context = activity != null ? activity : fragment.getContext();
+            Toast.makeText(context, R.string.error_denied_storage_permission, Toast.LENGTH_LONG).show();
+        } else if (activity != null) {
+            activity.requestPermissions(READ_PERMISSIONS, PERMISSION_READ_EXTERNAL_STORAGE);
         } else {
-            return READ_PERMISSIONS;
+            fragment.requestPermissions(READ_PERMISSIONS, PERMISSION_READ_EXTERNAL_STORAGE);
         }
     }
 
