@@ -1566,6 +1566,10 @@
     <string name="notify_channel_passcache">Passphrase cache</string>
     <string name="notify_channel_orbot">Orbot status</string>
 
+    <string name="label_obfuscate_pgp_markers">Obfuscate PGP markers</string>
+    <string name="snack_obfuscate_markers_on">PGP markers will be replaced by a hex pattern. Only EasyKeychain and Easy PGP can read such messages.</string>
+    <string name="snack_obfuscate_markers_off">Messages will have regular PGP markers.</string>
+
     <string name="keychoice_cannot_encrypt">This key cannot be used for encryption!</string>
     <string name="keychoice_cannot_sign">This key cannot be used for signing!</string>
     <string name="keychoice_insecure">This key cannot be used because it is insecure!</string>

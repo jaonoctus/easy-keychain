@@ -43,6 +43,7 @@ import dev.jaonoctus.easykeychain.Constants;
 import dev.jaonoctus.easykeychain.R;
 import dev.jaonoctus.easykeychain.operations.results.SignEncryptResult;
 import dev.jaonoctus.easykeychain.pgp.KeyRing;
+import dev.jaonoctus.easykeychain.pgp.PgpMarkerObfuscator;
 import dev.jaonoctus.easykeychain.pgp.PgpSecurityConstants.OpenKeychainCompressionAlgorithmTags;
 import dev.jaonoctus.easykeychain.pgp.PgpSignEncryptData;
 import dev.jaonoctus.easykeychain.pgp.SignEncryptParcel;
@@ -67,6 +68,7 @@ public class EncryptTextFragment
     private boolean mUseCompression;
     private boolean mSelfEncrypt;
     private boolean mHiddenRecipients = false;
+    private boolean mObfuscateMarkers = false;
 
     private String mMessage = "";
 
@@ -157,6 +159,8 @@ public class EncryptTextFragment
             mSelfEncrypt = prefs.getTextSelfEncrypt();
         }
 
+        mObfuscateMarkers = prefs.getTextObfuscatePgpMarkers();
+
         setHasOptionsMenu(true);
 
     }
@@ -168,6 +172,7 @@ public class EncryptTextFragment
 
         menu.findItem(R.id.check_enable_compression).setChecked(mUseCompression);
         menu.findItem(R.id.check_enable_self_encrypt).setChecked(mSelfEncrypt);
+        menu.findItem(R.id.check_obfuscate_markers).setChecked(mObfuscateMarkers);
 
         if (mReturnProcessTextAfterEncrypt) {
             menu.findItem(R.id.encrypt_paste).setVisible(true);
@@ -183,6 +188,13 @@ public class EncryptTextFragment
             toggleEnableCompression(item, !item.isChecked());
         } else if (itemId == R.id.check_enable_self_encrypt) {
             toggleEnableSelfEncrypt(item, !item.isChecked());
+        } else if (itemId == R.id.check_obfuscate_markers) {
+            mObfuscateMarkers = !item.isChecked();
+            item.setChecked(mObfuscateMarkers);
+            Preferences.getPreferences(getActivity()).setTextObfuscatePgpMarkers(mObfuscateMarkers);
+            Notify.create(getActivity(), mObfuscateMarkers
+                    ? R.string.snack_obfuscate_markers_on
+                    : R.string.snack_obfuscate_markers_off, Style.OK).show(this);
         } else if (itemId == R.id.encrypt_copy) {
             hideKeyboard();
             mShareAfterEncrypt = false;
@@ -316,16 +328,27 @@ public class EncryptTextFragment
             return;
         }
 
-        ClipData clip = ClipData.newPlainText(Constants.CLIPBOARD_LABEL, new String(result.getResultBytes()));
+        ClipData clip = ClipData.newPlainText(Constants.CLIPBOARD_LABEL, getResultText(result.getResultBytes()));
         clipMan.setPrimaryClip(clip);
         result.createNotify(activity).show();
+    }
+
+    /**
+     * The encrypted text as it leaves the app, whether shared, copied or returned to the caller.
+     */
+    private String getResultText(byte[] resultBytes) {
+        String text = new String(resultBytes);
+        if (mObfuscateMarkers) {
+            return PgpMarkerObfuscator.obfuscate(text);
+        }
+        return text;
     }
 
     private Intent createSendIntent(byte[] resultBytes) {
         Intent sendIntent;
         sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.setType(Constants.MIME_TYPE_TEXT);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, new String(resultBytes));
+        sendIntent.putExtra(Intent.EXTRA_TEXT, getResultText(resultBytes));
 
         EncryptActivity modeInterface = (EncryptActivity) getActivity();
         EncryptModeFragment modeFragment = modeInterface.getModeFragment();
@@ -363,7 +386,7 @@ public class EncryptTextFragment
                     getString(R.string.title_share_message)));
         } else if (mReturnProcessTextAfterEncrypt) {
             Intent resultIntent = new Intent();
-            resultIntent.putExtra(Intent.EXTRA_PROCESS_TEXT, new String(result.getResultBytes()));
+            resultIntent.putExtra(Intent.EXTRA_PROCESS_TEXT, getResultText(result.getResultBytes()));
             getActivity().setResult(Activity.RESULT_OK, resultIntent);
             getActivity().finish();
         } else {

@@ -43,4 +43,11 @@
         <!--android:checked="false"-->
         <!--android:checkable="true" />-->
 
+    <item
+        android:id="@+id/check_obfuscate_markers"
+        android:title="@string/label_obfuscate_pgp_markers"
+        android:orderInCategory="1"
+        android:checked="false"
+        android:checkable="true" />
+
 </menu>

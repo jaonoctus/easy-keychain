@@ -96,9 +96,19 @@ public class PgpHelper {
                 text = fixPgpCleartextSignature(text);
                 return text;
             } else {
-                return null;
+                // null if this isn't a message with obfuscated armor markers either
+                return PgpMarkerObfuscator.deobfuscate(input);
             }
         }
+    }
+
+    /**
+     * Cheap check whether the input holds something {@link #getPgpMessageContent} would return.
+     */
+    public static boolean containsPgpMessage(@NonNull CharSequence input) {
+        return PGP_MESSAGE.matcher(input).matches()
+                || PGP_CLEARTEXT_SIGNATURE.matcher(input).matches()
+                || PgpMarkerObfuscator.isObfuscated(input);
     }
 
     public static String getPgpPublicKeyContent(@NonNull CharSequence input) {
