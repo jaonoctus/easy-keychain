@@ -2,7 +2,9 @@ rootProject.name = 'easy-keychain'
 
 include ':EasyKeychain'
 include ':nfcsweetspot'
-include ':extern:bouncycastle:pg'
+// only the OpenPGP module of the patched Bouncy Castle fork, built standalone
+include ':bcpg'
+project(':bcpg').projectDir = new File('extern/bouncycastle/pg')
 include ':extern:MaterialChipsInput:library'
 
 // Workaround for Android Gradle Plugin 2.0, as described in http://stackoverflow.com/a/36544850
