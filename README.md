@@ -7,6 +7,9 @@ It is a fork of [OpenKeychain](https://www.openkeychain.org), and is not affilia
 > **Alpha software.** EasyKeychain is under active development, and the changes made since it was forked from OpenKeychain have not been audited.
 > Do not rely on it to protect data whose disclosure would put you at risk.
 
+<a href="https://play.google.com/store/apps/details?id=dev.jaonoctus.easykeychain" target="_blank">
+<img src=/graphics/get-it-on-google-play.png alt="Get it on Google Play" height="80"/></a>
+
 ### Branches
 * The development of OpenKeychain happens in the "master" branch.
 * For every release a new branch, e.g., "3.2-fixes" is created to backport fixes from "master"
