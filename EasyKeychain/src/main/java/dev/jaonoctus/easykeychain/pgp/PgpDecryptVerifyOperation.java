@@ -795,7 +795,10 @@ public class PgpDecryptVerifyOperation extends BaseOperation<PgpDecryptVerifyInp
 
             try {
                 result.cleartextStream = encryptedDataSymmetric.getDataStream(decryptorFactory);
-            } catch (PGPDataValidationException e) {
+            } catch (PGPException e) {
+                // A wrong passphrase either fails the data check (PGPDataValidationException), or
+                // decrypts the session key packet to garbage, which surfaces as a generic
+                // PGPException (e.g. "unknown symmetric algorithm"). Both mean: ask again.
                 log.add(LogType.MSG_DC_ERROR_SYM_PASSPHRASE, indent + 1);
                 RequiredInputParcel requiredInputParcel = customRequiredInputParcel != null ?
                         customRequiredInputParcel : RequiredInputParcel.createRequiredSymmetricPassphrase();

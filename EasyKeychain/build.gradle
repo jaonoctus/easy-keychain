@@ -57,8 +57,9 @@ dependencies {
     implementation project(':extern:MaterialChipsInput')
 
     // implementation project(':openkeychain:extern:bouncycastle:core')
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
-    implementation project(':extern:bouncycastle:pg')
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.86'
+    implementation 'org.bouncycastle:bcutil-jdk18on:1.86'
+    implementation project(':bcpg')
     // implementation project(':openkeychain:extern:bouncycastle:prov')
 
     implementation 'androidx.work:work-runtime:2.9.0'
@@ -225,6 +226,8 @@ android {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE.md'
+        exclude 'META-INF/NOTICE.md'
         exclude '.readme'
     }
 }
