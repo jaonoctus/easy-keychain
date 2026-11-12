@@ -23,9 +23,13 @@ import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
@@ -37,6 +41,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
 import dev.jaonoctus.easykeychain.Constants;
@@ -45,6 +50,7 @@ import dev.jaonoctus.easykeychain.compatibility.AppCompatPreferenceActivity;
 import dev.jaonoctus.easykeychain.keyimport.HkpKeyserverAddress;
 import dev.jaonoctus.easykeychain.keysync.KeyserverSyncManager;
 import dev.jaonoctus.easykeychain.network.orbot.OrbotHelper;
+import dev.jaonoctus.easykeychain.service.PgpNotificationListenerService;
 import dev.jaonoctus.easykeychain.ui.util.Notify;
 import dev.jaonoctus.easykeychain.ui.util.ThemeChanger;
 import dev.jaonoctus.easykeychain.util.Preferences;
@@ -55,6 +61,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     public static final int REQUEST_CODE_KEYSERVER_PREF = 0x00007005;
     public static final int REQUEST_CODE_SMARTPGP_AUTHORITIES_PREF = 0x00007006;
     private static final int REQUEST_PERMISSION_READ_CONTACTS = 13;
+    private static final int REQUEST_PERMISSION_POST_NOTIFICATIONS = 14;
 
     private static Preferences sPreferences;
     private ThemeChanger mThemeChanger;
@@ -407,7 +414,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      */
     public static class ExperimentalPrefsFragment extends PresetPreferenceFragment {
 
+        // Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS, which is only public since API 22
+        private static final String ACTION_NOTIFICATION_LISTENER_SETTINGS =
+                "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS";
+
         private PreferenceScreen mSmartPGPAuthoritiesPreference = null;
+        private SwitchPreference mNotificationWatcherPreference = null;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -439,6 +451,64 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                             return false;
                         }
                     });
+
+            initializeNotificationWatcher();
+        }
+
+        private void initializeNotificationWatcher() {
+            mNotificationWatcherPreference =
+                    (SwitchPreference) findPreference(Constants.Pref.EXPERIMENTAL_NOTIFICATION_WATCHER);
+            if (!PgpNotificationListenerService.isSupported()) {
+                getPreferenceScreen().removePreference(mNotificationWatcherPreference);
+                mNotificationWatcherPreference = null;
+                return;
+            }
+
+            mNotificationWatcherPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    Activity activity = getActivity();
+                    if (!(Boolean) newValue) {
+                        // Disabling the component also takes it out of the system's list of
+                        // notification listeners, so nothing is delivered to it anymore.
+                        PgpNotificationListenerService.setComponentEnabled(activity, false);
+                        return true;
+                    }
+
+                    PgpNotificationListenerService.setComponentEnabled(activity, true);
+                    requestPostNotificationsPermission();
+                    if (PgpNotificationListenerService.hasNotificationAccess(activity)) {
+                        return true;
+                    }
+
+                    // The switch only turns on once access is granted, onResume picks that up.
+                    try {
+                        startActivity(new Intent(ACTION_NOTIFICATION_LISTENER_SETTINGS));
+                        Toast.makeText(activity, R.string.notification_watcher_grant_access, Toast.LENGTH_LONG).show();
+                    } catch (ActivityNotFoundException e) {
+                        PgpNotificationListenerService.setComponentEnabled(activity, false);
+                        Toast.makeText(activity, R.string.notification_watcher_no_settings, Toast.LENGTH_LONG).show();
+                    }
+                    return false;
+                }
+            });
+        }
+
+        private void requestPostNotificationsPermission() {
+            // without it the "encrypted message detected" notification is silently dropped
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    && getActivity().checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[] { Manifest.permission.POST_NOTIFICATIONS },
+                        REQUEST_PERMISSION_POST_NOTIFICATIONS);
+            }
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            if (mNotificationWatcherPreference != null) {
+                mNotificationWatcherPreference.setChecked(PgpNotificationListenerService.isActive(getActivity()));
+            }
         }
 
         @Override

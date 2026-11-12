@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
@@ -47,6 +48,8 @@ public class DecryptActivity extends BaseActivity {
     public static final String ACTION_DECRYPT_FROM_CLIPBOARD = "DECRYPT_DATA_CLIPBOARD";
 
     public static final String EXTRA_CLIPDATA = "DECRYPT_DATA_CLIPBOARD_DATA";
+    /** Id of the "encrypted message detected" notification this activity was opened from, if any. */
+    public static final String EXTRA_DETECTED_NOTIFICATION_ID = "detected_notification_id";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -194,6 +197,21 @@ public class DecryptActivity extends BaseActivity {
 
         displayListFragment(uris, canDelete, isAutocryptSetup);
 
+        // Only now that the message has been taken over. Every return above leaves the
+        // notification in place, so there is still a way back to the message.
+        dismissDetectedNotification(intent);
+
+    }
+
+    private void dismissDetectedNotification(Intent intent) {
+        int notificationId = intent.getIntExtra(EXTRA_DETECTED_NOTIFICATION_ID, -1);
+        if (notificationId == -1) {
+            return;
+        }
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (notificationManager != null) {
+            notificationManager.cancel(notificationId);
+        }
     }
 
     @Nullable

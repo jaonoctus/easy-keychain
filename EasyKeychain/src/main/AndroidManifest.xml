@@ -829,6 +829,19 @@
             android:theme="@style/Theme.Keychain.AppCompat.Transparent.Fullscreen"
             />
 
+        <!-- Watches other apps' notifications for PGP messages. Disabled until the user turns the
+             feature on in the experimental settings, see PgpNotificationListenerService. -->
+        <service
+            android:name=".service.PgpNotificationListenerService"
+            android:enabled="false"
+            android:exported="true"
+            android:label="@string/notification_watcher_service_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Internal services/content providers (not exported) -->
         <service
             android:name=".service.PassphraseCacheService"

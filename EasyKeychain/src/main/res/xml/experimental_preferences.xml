@@ -22,6 +22,15 @@
         android:summary="@string/label_usb_untested_summary"
         android:title="@string/label_usb_untested" />
 
+    <!-- Not persistent: the state is whether the listener component is enabled and has been
+         granted notification access, see SettingsActivity. -->
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="experimentalNotificationWatcher"
+        android:persistent="false"
+        android:summary="@string/label_notification_watcher_summary"
+        android:title="@string/label_notification_watcher" />
+
     <SwitchPreference
         android:defaultValue="false"
         android:key="smartpgp_authorities_pref"
