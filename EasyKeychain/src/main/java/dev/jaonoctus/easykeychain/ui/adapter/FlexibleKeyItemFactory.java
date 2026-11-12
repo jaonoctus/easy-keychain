@@ -60,7 +60,7 @@ public class FlexibleKeyItemFactory {
 
     @NonNull
     private String getHeaderText(UnifiedKeyInfo unifiedKeyInfo) {
-        String headerText = unifiedKeyInfo.name();
+        String headerText = unifiedKeyInfo.displayName();
         if (headerText == null || headerText.isEmpty()) {
             headerText = unifiedKeyInfo.email();
         }

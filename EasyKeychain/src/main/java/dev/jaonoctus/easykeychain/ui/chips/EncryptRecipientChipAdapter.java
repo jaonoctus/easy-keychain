@@ -66,7 +66,7 @@ public class EncryptRecipientChipAdapter extends ChipsAdapter<EncryptRecipientCh
     private SimpleChip simpleChipFromKeyInfo(UnifiedKeyInfo keyInfo) {
         String name;
         String email;
-        if (keyInfo.name() == null) {
+        if (keyInfo.displayName() == null) {
             if (keyInfo.email() != null) {
                 name = keyInfo.email();
                 email = null;
@@ -75,7 +75,7 @@ public class EncryptRecipientChipAdapter extends ChipsAdapter<EncryptRecipientCh
                 email = null;
             }
         } else {
-            name = keyInfo.name();
+            name = keyInfo.displayName();
             if (keyInfo.email() != null) {
                 email = keyInfo.email();
             } else {

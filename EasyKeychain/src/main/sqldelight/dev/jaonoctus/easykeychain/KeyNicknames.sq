@@ -1,0 +1,22 @@
+-- A name the user gave to a key, on this device only. It is not part of the key
+-- and is never exported or uploaded with it.
+--
+-- NOTE: Like key_metadata, this table's data is NOT bound to keyrings_public, so
+-- that a nickname survives the key being updated or re-imported. It is removed
+-- when the key is deleted.
+CREATE TABLE IF NOT EXISTS key_nicknames (
+    master_key_id INTEGER PRIMARY KEY,
+    nickname TEXT NOT NULL
+);
+
+selectByMasterKeyId:
+SELECT nickname
+    FROM key_nicknames
+    WHERE master_key_id = ?;
+
+replaceNickname:
+REPLACE INTO key_nicknames (master_key_id, nickname) VALUES (?, ?);
+
+deleteByMasterKeyId:
+DELETE FROM key_nicknames
+    WHERE master_key_id = ?;

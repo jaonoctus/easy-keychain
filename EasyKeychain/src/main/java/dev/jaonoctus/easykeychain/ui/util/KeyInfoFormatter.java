@@ -36,7 +36,18 @@ public class KeyInfoFormatter {
     }
 
     public void formatUserId(TextView name, TextView email) {
-        if (keyInfo.name() == null && keyInfo.email() == null) {
+        String nickname = keyInfo.nickname();
+        if (nickname != null && !nickname.isEmpty()) {
+            // the nickname takes the place of the name, with the key's own identity below it
+            name.setText(highlighter.highlight(nickname));
+            String identity = keyInfo.email() != null ? keyInfo.email() : keyInfo.name();
+            if (identity != null) {
+                email.setText(highlighter.highlight(identity));
+                email.setVisibility(View.VISIBLE);
+            } else {
+                email.setVisibility(View.GONE);
+            }
+        } else if (keyInfo.name() == null && keyInfo.email() == null) {
             String readableKeyId = KeyFormattingUtils.beautifyKeyId(keyInfo.master_key_id());
             name.setText(context.getString(R.string.keylist_item_key_id, readableKeyId));
             email.setVisibility(View.GONE);
