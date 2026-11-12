@@ -1,0 +1,896 @@
+diff --git a/pg/build.gradle b/pg/build.gradle
+index 3cbee096e8..0f6f3da6ea 100644
+--- a/pg/build.gradle
++++ b/pg/build.gradle
+@@ -1,165 +1,21 @@
++// OpenKeychain/EasyKeychain: this module is built standalone as ':bcpg' from the app's
++// settings.gradle, against the released provider jars. The rest of the Bouncy Castle build,
++// including the root build.gradle, is not used.
++apply plugin: 'java-library'
+ 
+-plugins {
+-  id "biz.aQute.bnd.builder" version "7.1.0"
++java {
++    sourceCompatibility = JavaVersion.VERSION_1_8
++    targetCompatibility = JavaVersion.VERSION_1_8
+ }
+ 
+-sourceSets {
+-    java9 {
+-        java {
+-            srcDirs = ['src/main/jdk1.9']
+-        }
+-    }
++// upstream targets Java 8; don't let newer JDKs warn about that on every build
++tasks.withType(JavaCompile).configureEach {
++    options.compilerArgs << '-Xlint:-options'
+ }
+ 
+-
+ dependencies {
+-    implementation project(':prov')
+-    implementation project(':util')
+-
+-    java9Implementation project(':prov')
+-    java9Implementation project(':util')
+-    java9Implementation files(sourceSets.main.output.classesDirs) {
+-        builtBy compileJava
+-    }
+-
+-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+-}
+-
+-evaluationDependsOn(":prov")
+-evaluationDependsOn(":util")
+-
+-// Stamp the current project version into the BCPG default-version string in
+-// ArmoredOutputStream and the matching PGP-armored test inputs. Operates in
+-// place (no generated-src copy) and is idempotent: files are only rewritten
+-// when their stamped content actually differs, so a clean checkout matching
+-// the gradle version produces no working-tree diff and downstream compile
+-// tasks stay UP-TO-DATE.
+-//
+-// The stamped set is explicit rather than tree-walked because several test
+-// classes pin historical BCPG version strings (e.g. v1.32, v1.68) as parser
+-// fixtures and must not be rewritten.
+-task stampVersion {
+-    description = 'Stamps the current project version into ArmoredOutputStream and the matching PGP-armored test inputs.'
+-
+-    doLast {
+-        def stamp = "BCPG v${version}".toString()
+-        def pattern = ~/BCPG v\d+(?:\.\d+){1,2}(?:-SNAPSHOT)?/
+-
+-        def filesToStamp = [
+-            file('src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java'),
+-            file('src/main/jdk1.4/org/bouncycastle/bcpg/ArmoredOutputStream.java'),
+-            file('src/main/jdk1.3/org/bouncycastle/bcpg/ArmoredOutputStream.java'),
+-            file('src/test/java/org/bouncycastle/openpgp/test/ECDSAKeyPairTest.java'),
+-            file('src/test/java/org/bouncycastle/openpgp/test/PGPv6SignatureTest.java'),
+-            file('src/test/java/org/bouncycastle/bcpg/test/BCPGOutputStreamTest.java')
+-        ]
+-
+-        filesToStamp.each { f ->
+-            def text = f.text
+-            def updated = pattern.matcher(text).replaceAll(stamp)
+-            if (updated != text) {
+-                f.text = updated
+-                logger.lifecycle("Stamped ${stamp} into ${f}")
+-            }
+-        }
+-    }
+-}
+-
+-compileJava.dependsOn stampVersion
+-compileTestJava.dependsOn stampVersion
+-
+-compileJava {
+-
+-    options.release = 8
+-}
+-
+-
+-compileJava9Java {
+-
+-    options.release = 9
+-
+-    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
+-    def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
+-
+-    options.compilerArgs += [
+-            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}"
+-    ]
+-
+-    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
+-    options.compilerArgs << '-implicit:none'  // avoid recompiling every baseline class implicitly loaded via sourcepath
+-}
+-
+-
+-jar.archiveBaseName = "bcpg-$vmrange"
+-
+-
+-
+-task sourcesJar(type: Jar) {
+-    dependsOn stampVersion
+-
+-    archiveBaseName = jar.archiveBaseName
+-    archiveClassifier = 'sources'
+-    from sourceSets.main.allSource
+-    exclude("**/*.so")
+-    into('META-INF/versions/9') {
+-        from sourceSets.java9.allSource
+-    }
+-}
+-
+-jar {
+-    from sourceSets.main.output
+-    into('META-INF/versions/9') {
+-        from sourceSets.java9.output
+-    }
+-    String v = "${rootProject.extensions.ext.bundle_version}"
+-    manifest.attributes('Multi-Release': 'true')
+-    manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
+-    manifest.attributes('Bundle-Name': 'bcpg')
+-    manifest.attributes('Bundle-SymbolicName': 'bcpg')
+-    manifest.attributes('Export-Package': "org.bouncycastle.{apache|bcpg|gpg|openpgp}.*;version=${v}")
+-    manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!org.bouncycastle.{apache|bcpg|gpg|openpgp|}.*,org.bouncycastle.*;version=\"[${v},${maxVersion})\"")
+-    manifest.attributes('Bundle-Version': "${v}")
+-    manifest.attributes('Permissions': 'all-permissions')
+-    manifest.attributes('Codebase': '*')
+-    manifest.attributes('Application-Library-Allowable-Codebase': '*')
+-    manifest.attributes('Caller-Allowable-Codebase': '*') 
+-    manifest.attributes('Trusted-Library': 'true')
+-}
+-
+-
+-task javadocJar(type: Jar, dependsOn: javadoc) {
+-  archiveBaseName = jar.archiveBaseName
+-  archiveClassifier = 'javadoc'
+-  from javadoc.destinationDir
+-}
+-
+-artifacts {
+-    archives jar
+-    archives javadocJar
+-    archives sourcesJar
+-}
+-
+-test {
+-    forkEvery = 1;
+-    maxParallelForks = 8;
+-    maxHeapSize = "3g";
+-    jvmArgs = ['-Dtest.java.version.prefix=any']
+-}
+-
+-compileJava9Java.dependsOn([":prov:jar", ":util:jar"])
+-
+-publishing {
+-    publications {
+-        maven(MavenPublication) {
+-            groupId = 'org.bouncycastle'
+-            artifactId = "bcpg-$vmrange"
+-            from components.java
+-
+-
+-            artifact(javadocJar)
+-            artifact(sourcesJar)
+-        }
+-
++    implementation 'org.bouncycastle:bcprov-jdk18on:1.86'
++    implementation 'org.bouncycastle:bcutil-jdk18on:1.86'
+ 
+-    }
++    testImplementation 'junit:junit:4.13.2'
+ }
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/ArmoredInputStream.java b/pg/src/main/java/org/bouncycastle/bcpg/ArmoredInputStream.java
+index f46a197053..bf1e800709 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/ArmoredInputStream.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/ArmoredInputStream.java
+@@ -339,6 +339,11 @@ private boolean parseHeaders()
+ 
+             while ((c = in.read()) >= 0)
+             {
++                // GPG4USB emits CRCRLF line endings - just ignore subsequent '\r' characters
++                if (last == '\r' && c == '\r')
++                {
++                    continue;
++                }
+                 if (last == '\r' && c == '\n')
+                 {
+                     crLf = true;
+@@ -406,6 +411,10 @@ private boolean parseHeaders()
+             if (crLf)
+             {
+                 int nl = in.read(); // skip last \n
++                // GPG4USB emits CRCRLF line endings, so we might need to ignore an additional cr here
++                if (nl == '\r') {
++                    nl = in.read();
++                }
+                 if (nl != '\n')
+                 {
+                     throw new ArmoredInputException("inconsistent line endings in headers");
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java b/pg/src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java
+index 2542b48d3d..f5ae083c75 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java
+@@ -141,8 +141,6 @@ public ArmoredOutputStream(
+         {
+             nl = "\r\n";
+         }
+-
+-        setHeader(VERSION_HDR, DEFAULT_VERSION);
+     }
+ 
+     /**
+@@ -264,14 +262,7 @@ public void addHeader(
+     @Deprecated
+     public void resetHeaders()
+     {
+-        List<String> versions = headers.get(VERSION_HDR);
+-
+         headers.clear();
+-
+-        if (versions != null)
+-        {
+-            headers.put(VERSION_HDR, versions);
+-        }
+     }
+ 
+     /**
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/BCPGInputStream.java b/pg/src/main/java/org/bouncycastle/bcpg/BCPGInputStream.java
+index 2a782f39a8..d933d8189f 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/BCPGInputStream.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/BCPGInputStream.java
+@@ -332,6 +332,31 @@ public void close()
+         in.close();
+     }
+ 
++    /**
++     * Return the length of the contained data packet, if available. Returns null if the
++     * length is not available, which is the case for a BCPGInputStream which is not inside
++     * a parsed Packet, and partial data packets.
++     */
++    public Long getBodyLengthIfAvailable() {
++        if (in instanceof PartialInputStream) {
++            long length = ((PartialInputStream) in).getBodyLength();
++            return length == 0 ? null : length;
++        }
++        return null;
++    }
++
++    public Long findDataLength() {
++        if (in instanceof PartialInputStream) {
++            try {
++                ((PartialInputStream) in).skipToEnd();
++            } catch (IOException e) {
++                return null;
++            }
++            return getBodyLengthIfAvailable();
++        }
++        return null;
++    }
++
+     /**
+      * a stream that overlays our input stream, allowing the user to only read a segment of it.
+      * <p>
+@@ -342,12 +367,15 @@ private static class PartialInputStream
+     {
+         private final InputStream in;
+         private boolean partial;
++        private long totalDataLength;
+         private int dataLength;
+ 
+         PartialInputStream(InputStream in, boolean partial, int dataLength)
+         {
+             this.in = in;
+             this.partial = partial;
++            // widen negative integer range to long
++            this.totalDataLength = dataLength & 0x00000000ffffffffL;
+             this.dataLength = dataLength;
+         }
+ 
+@@ -370,6 +398,11 @@ public int available()
+             }
+         }
+ 
++        private long getBodyLength()
++        {
++            return partial ? 0L : totalDataLength;
++        }
++
+         private int loadDataLength()
+             throws IOException
+         {
+@@ -380,9 +413,30 @@ private int loadDataLength()
+                 return -1;
+             }
+             partial = flags[StreamUtil.flag_partial];
++
++            totalDataLength += dataLength;
++
+             return dataLength;
+         }
+ 
++        public void skipToEnd()
++                throws IOException
++        {
++            do
++            {
++                if (dataLength != 0)
++                {
++                    long readLen = in.skip(dataLength);
++                    if (readLen < 0)
++                    {
++                        throw new EOFException("premature end of stream in PartialInputStream");
++                    }
++                    dataLength -= readLen;
++                }
++            }
++            while (partial && loadDataLength() >= 0);
++        }
++
+         public int read(byte[] buf, int offset, int len)
+             throws IOException
+         {
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/EdDSAPublicBCPGKey.java b/pg/src/main/java/org/bouncycastle/bcpg/EdDSAPublicBCPGKey.java
+index d6d95e4a96..7d7cea65c1 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/EdDSAPublicBCPGKey.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/EdDSAPublicBCPGKey.java
+@@ -5,6 +5,8 @@
+ 
+ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+ import org.bouncycastle.math.ec.ECPoint;
++import org.bouncycastle.util.Arrays;
++import org.bouncycastle.util.BigIntegers;
+ 
+ /**
+  * Base class for an EdDSA Public Key.
+@@ -42,4 +44,15 @@ public EdDSAPublicBCPGKey(
+     {
+         super(oid, encodedPoint);
+     }
++
++    public byte[] getEdDSAEncodedPoint()
++    {
++        BigInteger encodedPoint = getEncodedPoint();
++        byte[] pointData = BigIntegers.asUnsignedByteArray(encodedPoint);
++        if (pointData[0] != 0x40)
++        {
++            throw new IllegalStateException("Invalid point format in EdDSA key!");
++        }
++        return Arrays.copyOfRange(pointData, 1, pointData.length);
++    }
+ }
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/LiteralDataPacket.java b/pg/src/main/java/org/bouncycastle/bcpg/LiteralDataPacket.java
+index 8ab7ad86af..88156ab9c2 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/LiteralDataPacket.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/LiteralDataPacket.java
+@@ -14,6 +14,7 @@ public class LiteralDataPacket
+     int     format;
+     byte[]  fileName;
+     long    modDate;
++    Long    literalLength;
+ 
+     LiteralDataPacket(
+             BCPGInputStream    in)
+@@ -52,6 +53,17 @@ public class LiteralDataPacket
+         {
+             throw new IOException("literal data truncated in header");
+         }
++
++        literalLength = in.getBodyLengthIfAvailable();
++        if (literalLength != null) {
++            // length of literal data is length of the packet...
++            // ...minus 1 byte format, 1 byte filename length
++            literalLength -= 2;
++            // ...minus length of the filename
++            literalLength -= l;
++            // ...minus two bytes timestamp
++            literalLength -= 4;
++        }
+     }
+ 
+     /**
+@@ -85,4 +97,5 @@ public byte[] getRawFileName()
+     {
+         return Arrays.clone(fileName);
+     }
++
+ }
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/OpaquePublicBCPGKey.java b/pg/src/main/java/org/bouncycastle/bcpg/OpaquePublicBCPGKey.java
+new file mode 100644
+index 0000000000..a1084417c3
+--- /dev/null
++++ b/pg/src/main/java/org/bouncycastle/bcpg/OpaquePublicBCPGKey.java
+@@ -0,0 +1,72 @@
++package org.bouncycastle.bcpg;
++
++
++import java.io.IOException;
++import java.math.BigInteger;
++
++
++/**
++ * A public key with opaque data. Can be read and written as-is, but not perform actual crypto operations.
++ */
++public class OpaquePublicBCPGKey
++    extends BCPGObject implements BCPGKey
++{
++
++    private final byte[] data;
++
++    /**
++     * Construct an opaque public key from the passed in stream.
++     *
++     * @param in
++     * @throws IOException
++     */
++    public OpaquePublicBCPGKey(
++        BCPGInputStream    in)
++        throws IOException
++    {
++        this.data = in.readAll();
++    }
++
++    /**
++     * @param data the public exponent
++     */
++    public OpaquePublicBCPGKey(
++        byte[] data)
++    {
++        this.data = data;
++    }
++
++    /**
++     *  return "PGP"
++     *
++     * @see BCPGKey#getFormat()
++     */
++    public String getFormat()
++    {
++        return "PGP";
++    }
++
++    /**
++     * return the standard PGP encoding of the key.
++     *
++     * @see BCPGKey#getEncoded()
++     */
++    public byte[] getEncoded() 
++    {
++        try
++        {
++            return super.getEncoded();
++        }
++        catch (IOException e)
++        {
++            return null;
++        }
++    }
++    
++    public void encode(
++        BCPGOutputStream    out)
++        throws IOException
++    {
++        out.write(data);
++    }
++}
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/PublicKeyPacket.java b/pg/src/main/java/org/bouncycastle/bcpg/PublicKeyPacket.java
+index 11f6a2e943..e081f0df92 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/PublicKeyPacket.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/PublicKeyPacket.java
+@@ -4,6 +4,11 @@
+ import java.io.IOException;
+ import java.util.Date;
+ 
++import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
++import org.bouncycastle.asn1.x9.ECNamedCurveTable;
++import org.bouncycastle.asn1.x9.X9ECParameters;
++
++
+ /**
+  * Base class for OpenPGP public (primary) keys.
+  * The public key packet holds the public parameters of an OpenPGP key pair.
+@@ -170,8 +175,20 @@ private void parseKey(BCPGInputStream in, int algorithmId, long optLen)
+                 key = new ElGamalPublicBCPGKey(in);
+                 break;
+             case ECDH:
+-                key = new ECDHPublicBCPGKey(in);
++            {
++                // OpenKeychain: treat ECC keys with unknown curves as opaque keys
++                ECDHPublicBCPGKey candidateKey = new ECDHPublicBCPGKey(in);
++                X9ECParameters params = ECNamedCurveTable.getByOID(candidateKey.getCurveOID());
++                if (CryptlibObjectIdentifiers.curvey25519.equals(candidateKey.getCurveOID()) || params != null)
++                {
++                    key = candidateKey;
++                }
++                else
++                {
++                    key = new OpaquePublicBCPGKey(candidateKey.getEncoded());
++                }
+                 break;
++            }
+             case X25519:
+                 key = new X25519PublicBCPGKey(in);
+                 break;
+@@ -179,8 +196,20 @@ private void parseKey(BCPGInputStream in, int algorithmId, long optLen)
+                 key = new X448PublicBCPGKey(in);
+                 break;
+             case ECDSA:
+-                key = new ECDSAPublicBCPGKey(in);
++            {
++                // OpenKeychain: treat ECC keys with unknown curves as opaque keys
++                ECDSAPublicBCPGKey candidateKey = new ECDSAPublicBCPGKey(in);
++                X9ECParameters params = ECNamedCurveTable.getByOID(candidateKey.getCurveOID());
++                if (params != null)
++                {
++                    key = candidateKey;
++                }
++                else
++                {
++                    key = new OpaquePublicBCPGKey(candidateKey.getEncoded());
++                }
+                 break;
++            }
+             case EDDSA_LEGACY:
+                 key = new EdDSAPublicBCPGKey(in);
+                 break;
+@@ -197,7 +226,9 @@ private void parseKey(BCPGInputStream in, int algorithmId, long optLen)
+                     key = new UnknownBCPGKey((int)optLen, in);
+                     break;
+                 }
+-                throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
++                // OpenKeychain: keep keys with unknown algorithms as opaque keys instead of failing
++                key = new OpaquePublicBCPGKey(in);
++                break;
+             }
+         }
+         catch (RuntimeException e)
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/S2K.java b/pg/src/main/java/org/bouncycastle/bcpg/S2K.java
+index 772f10bd09..1f5e7cbf14 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/S2K.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/S2K.java
+@@ -172,6 +172,15 @@ public class S2K
+         }
+     }
+ 
++    /**
++     * Constructs a specifier for a GNU Dummy S2K generation, ie. no saved secret key.
++     */
++    S2K() {
++        type = GNU_DUMMY_S2K;
++        algorithm = HashAlgorithmTags.SHA1; // (unused) s2k hash algorithm. just use what gpg uses
++        protectionMode = GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
++    }
++
+     /**
+      * Constructs a specifier for a {@link #SIMPLE simple} S2K generation.
+      *
+@@ -697,4 +706,14 @@ public int getProtectionMode()
+             return protectionMode;
+         }
+     }
++
++    /**
++     * Constructs a new gnu dummy key with no key data, and the specified protection mode.
++     */
++    public static S2K createDummyS2K(int protectionMode) {
++        S2K s2k = new S2K();
++        s2k.protectionMode = protectionMode;
++        return s2k;
++    }
++
+ }
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/SecretKeyPacket.java b/pg/src/main/java/org/bouncycastle/bcpg/SecretKeyPacket.java
+index 0a5073c21b..1b7928afe8 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/SecretKeyPacket.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/SecretKeyPacket.java
+@@ -249,7 +249,19 @@ public class SecretKeyPacket
+                 && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
+             if (!(isGNUDummyNoPrivateKey))
+             {
+-                if (s2kUsage != USAGE_NONE)
++                // OpenKeychain: for the GNU divert-to-card type, the serial number of the card is stored in the IV
++                if (s2k != null && s2k.getType() == S2K.GNU_DUMMY_S2K
++                    && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_DIVERT_TO_CARD)
++                {
++                    int len = in.read();
++                    if (len < 0)
++                    {
++                        throw new MalformedPacketException("Truncated divert-to-card serial number.");
++                    }
++                    iv = new byte[len];
++                    in.readFully(iv);
++                }
++                else if (s2kUsage != USAGE_NONE)
+                 {
+                     if (encAlgorithm < 7)
+                     {
+@@ -619,6 +631,12 @@ private byte[] encodeConditionalParameters()
+         }
+         if (iv != null)
+         {
++            // If this is a divert-to-card, write the length of the serial number at the start of the iv
++            if (s2k != null && s2k.getType() == S2K.GNU_DUMMY_S2K
++                    && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_DIVERT_TO_CARD)
++            {
++                conditionalParameters.write(iv.length);
++            }
+             // since USAGE_AEAD and other types that use an IV are mutually exclusive,
+             // we use the IV field for both v4 IVs and v6 AEAD nonces
+             conditionalParameters.write(iv);
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/SignaturePacket.java b/pg/src/main/java/org/bouncycastle/bcpg/SignaturePacket.java
+index 06fef3aead..93f80d8f12 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/SignaturePacket.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/SignaturePacket.java
+@@ -69,7 +69,8 @@ public class SignaturePacket
+                 break;
+             default:
+                 Streams.drain(in);
+-                throw new UnsupportedPacketVersionException("unsupported version: " + version);
++                // OpenKeychain: IOException instead of the unchecked UnsupportedPacketVersionException
++                throw new IOException("unsupported version: " + version);
+         }
+     }
+ 
+diff --git a/pg/src/main/java/org/bouncycastle/bcpg/UserAttributeSubpacket.java b/pg/src/main/java/org/bouncycastle/bcpg/UserAttributeSubpacket.java
+index dcfc064cd8..003da7356d 100644
+--- a/pg/src/main/java/org/bouncycastle/bcpg/UserAttributeSubpacket.java
++++ b/pg/src/main/java/org/bouncycastle/bcpg/UserAttributeSubpacket.java
+@@ -13,7 +13,14 @@ public class UserAttributeSubpacket
+     int                type;
+     private boolean    forceLongLength;   // we preserve this as not everyone encodes length properly.
+     protected byte[]   data;
+-    
++
++    public static UserAttributeSubpacket create(
++            int type,
++            byte[]         data)
++    {
++        return new UserAttributeSubpacket(type, data);
++    }
++
+     protected UserAttributeSubpacket(
+         int            type,
+         byte[]         data)
+diff --git a/pg/src/main/java/org/bouncycastle/openpgp/PGPLiteralData.java b/pg/src/main/java/org/bouncycastle/openpgp/PGPLiteralData.java
+index 3d839ea8f8..666d1213bb 100644
+--- a/pg/src/main/java/org/bouncycastle/openpgp/PGPLiteralData.java
++++ b/pg/src/main/java/org/bouncycastle/openpgp/PGPLiteralData.java
+@@ -113,6 +113,26 @@ public Date getModificationTime()
+         return new Date(data.getModificationTime());
+     }
+ 
++    /**
++     * Return the length of the contained literal data, if available. Returns null if the
++     * length is not available, which is the case for not partial data packets if not yet
++     * fully read.
++     */
++    public Long getDataLengthIfAvailable()
++    {
++        return data.getInputStream().getBodyLengthIfAvailable();
++    }
++
++    /**
++     * Return the length of the contained literal data, if available. This method skips over
++     * the entire content of the packet to find the length if necessary, and should be used
++     * only if the content is not required. Returns null if the length is not available.
++     */
++    public Long findDataLength()
++    {
++        return data.getInputStream().findDataLength();
++    }
++
+     /**
+      * Return the raw input stream for the data packet.
+      */
+diff --git a/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKey.java b/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKey.java
+index 87dc4bee5b..46975643b8 100644
+--- a/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKey.java
++++ b/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKey.java
+@@ -484,8 +484,7 @@ public boolean isEncryptionKey()
+     public boolean isMasterKey()
+     {
+         // this might seem a bit excessive, but we're also trying to flag something can't be a master key.
+-        return !(publicPk instanceof PublicSubkeyPacket)
+-            && !(this.isEncryptionKey() && publicPk.getAlgorithm() != PublicKeyAlgorithmTags.RSA_GENERAL);
++        return (subSigs == null);
+     }
+ 
+     /**
+@@ -1099,6 +1098,35 @@ private static PGPPublicKey removeCert(
+         return found ? returnKey : null;
+     }
+ 
++    /**
++     * Add a subkey binding certification, changing the key type from master to subkey.
++     *
++     * @param key the key the revocation is to be added to.
++     * @param certification the key signature to be added.
++     * @return the new changed public key object.
++     */
++    public static PGPPublicKey addSubkeyBindingCertification(
++            PGPPublicKey    key,
++            PGPSignature    certification)
++    {
++        // make sure no subSigs are previously present
++        if (!key.isMasterKey())
++        {
++            throw new IllegalArgumentException("key is already a subkey!");
++        }
++
++        PGPPublicKey    returnKey = new PGPPublicKey(key);
++
++        // change the packet type from key to subkey
++        returnKey.publicPk = new PublicSubkeyPacket(
++                returnKey.publicPk.getAlgorithm(), returnKey.publicPk.getTime(), returnKey.publicPk.getKey());
++
++        returnKey.subSigs = new ArrayList();
++        returnKey.subSigs.add(certification);
++        return returnKey;
++    }
++
++
+     /**
+      * Add a revocation or some other key certification to a key.
+      *
+diff --git a/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKeyEncryptedData.java b/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKeyEncryptedData.java
+index 1cbcafd58f..044917e7b9 100644
+--- a/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKeyEncryptedData.java
++++ b/pg/src/main/java/org/bouncycastle/openpgp/PGPPublicKeyEncryptedData.java
+@@ -48,6 +48,11 @@ private boolean confirmCheckSum(
+             && (sessionInfo[sessionInfo.length - 1] == (byte)(check));
+     }
+ 
++    public byte[][] getSessionKey()
++    {
++        return keyData.getEncSessionKey();
++    }
++
+     /**
+      * Return the keyID for the key used to encrypt the data.
+      *
+diff --git a/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKey.java b/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKey.java
+index 8711677e74..758099f414 100644
+--- a/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKey.java
++++ b/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKey.java
+@@ -581,6 +581,15 @@ public Iterator<String> getUserIDs()
+         return pub.getUserIDs();
+     }
+ 
++    /**
++     * Return the IV this secret key is encrypted with.
++     *
++     * @return the IV of this key.
++     */
++    public byte[] getIV() {
++        return secret.getIV();
++    }
++
+     /**
+      * Return any user attribute vectors associated with the key.
+      *
+@@ -1074,6 +1083,61 @@ public static PGPSecretKey replacePublicKey(PGPSecretKey secretKey, PGPPublicKey
+         return new PGPSecretKey(secretKey.secret, publicKey);
+     }
+ 
++    /**
++     * Create a new stripped secret key from a given public key, using the GNU DUMMY s2k type
++     * with an empty secret body.
++     *
++     * @param publicKey a public key object
++     * @return a stripped secret key object
++     */
++    public static PGPSecretKey constructGnuDummyKey(PGPPublicKey publicKey) {
++        SecretKeyPacket secret;
++        if (publicKey.isMasterKey()) {
++            secret = new SecretKeyPacket(
++                    publicKey.getPublicKeyPacket(),
++                    // this is a dummy anyways, use CAST5 for compatibility (it's what gpg does)
++                    SymmetricKeyAlgorithmTags.CAST5,
++                    S2K.createDummyS2K(S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY), null, null);
++        } else {
++            secret = new SecretSubkeyPacket(
++                    publicKey.getPublicKeyPacket(),
++                    // this is a dummy anyways, use CAST5 for compatibility (it's what gpg does)
++                    SymmetricKeyAlgorithmTags.CAST5,
++                    S2K.createDummyS2K(S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY), null, null);
++        }
++        return new PGPSecretKey(secret, publicKey);
++    }
++
++    /**
++     * Create a new stripped secret key from a given public key, using the GNU DUMMY
++     * divert-to-card s2k type, giving a serial number as iv.
++     *
++     * @param publicKey a public key object
++     * @param serial the serial number of the card, written as iv in the packet
++     * @return a stripped secret key object
++     */
++    public static PGPSecretKey constructGnuDummyKey(PGPPublicKey publicKey, byte[] serial) {
++        SecretKeyPacket secret;
++
++        byte[] iv = new byte[16];
++        System.arraycopy(serial, 0, iv, 0, serial.length > 16 ? 16 : serial.length);
++
++        if (publicKey.isMasterKey()) {
++            secret = new SecretKeyPacket(
++                    publicKey.getPublicKeyPacket(),
++                    SymmetricKeyAlgorithmTags.NULL,
++                    SecretKeyPacket.USAGE_CHECKSUM,
++                    S2K.createDummyS2K(S2K.GNU_PROTECTION_MODE_DIVERT_TO_CARD), iv, null);
++        } else {
++            secret = new SecretSubkeyPacket(
++                    publicKey.getPublicKeyPacket(),
++                    SymmetricKeyAlgorithmTags.NULL,
++                    SecretKeyPacket.USAGE_CHECKSUM,
++                    S2K.createDummyS2K(S2K.GNU_PROTECTION_MODE_DIVERT_TO_CARD), iv, null);
++        }
++        return new PGPSecretKey(secret, publicKey);
++    }
++
+     /**
+      * Parse a secret key from one of the GPG S expression keys associating it with the passed in public key.
+      *
+diff --git a/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKeyRing.java b/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKeyRing.java
+index 8319fcb4c7..f7d8ccf4cf 100644
+--- a/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKeyRing.java
++++ b/pg/src/main/java/org/bouncycastle/openpgp/PGPSecretKeyRing.java
+@@ -751,4 +751,31 @@ public static PGPSecretKeyRing removeSecretKey(
+ 
+         return new PGPSecretKeyRing(result, secRing.extraPubKeys);
+     }
++
++    public static PGPSecretKeyRing constructDummyFromPublic(PGPPublicKeyRing pubRing) {
++        return constructDummyFromPublic(pubRing, null);
++    }
++
++    public static PGPSecretKeyRing constructDummyFromPublic(PGPPublicKeyRing pubRing, byte[] cardSerial) {
++
++        List       keys = new ArrayList();
++
++        for (int i = 0; i < pubRing.keys.size();i++)
++        {
++            PGPPublicKey   pubKey = (PGPPublicKey)pubRing.keys.get(i);
++
++            PGPSecretKey   secKey;
++
++            if (cardSerial != null) {
++                secKey = PGPSecretKey.constructGnuDummyKey(pubKey, cardSerial);
++            } else {
++                secKey = PGPSecretKey.constructGnuDummyKey(pubKey);
++            }
++
++            keys.add(secKey);
++        }
++
++        return new PGPSecretKeyRing(keys);
++    }
++
+ }
+diff --git a/pg/src/main/java/org/bouncycastle/openpgp/PGPSignatureGenerator.java b/pg/src/main/java/org/bouncycastle/openpgp/PGPSignatureGenerator.java
+index 4cabe079c0..9018c06032 100644
+--- a/pg/src/main/java/org/bouncycastle/openpgp/PGPSignatureGenerator.java
++++ b/pg/src/main/java/org/bouncycastle/openpgp/PGPSignatureGenerator.java
+@@ -115,7 +115,8 @@ public void init(
+             throw new PGPException("key algorithm mismatch");
+         }
+ 
+-        if (key.getPublicKeyPacket().getVersion() != version)
++        // OpenKeychain: the private key is null when signing is diverted to a security token
++        if (key != null && key.getPublicKeyPacket().getVersion() != version)
+         {
+             throw new PGPException("Key version mismatch.");
+         }
+diff --git a/pg/src/main/java/org/bouncycastle/openpgp/PGPUserAttributeSubpacketVector.java b/pg/src/main/java/org/bouncycastle/openpgp/PGPUserAttributeSubpacketVector.java
+index 398168d7e4..63e255785e 100644
+--- a/pg/src/main/java/org/bouncycastle/openpgp/PGPUserAttributeSubpacketVector.java
++++ b/pg/src/main/java/org/bouncycastle/openpgp/PGPUserAttributeSubpacketVector.java
+@@ -53,7 +53,7 @@ public ImageAttribute getImageAttribute()
+         return (ImageAttribute)p;
+     }
+     
+-    UserAttributeSubpacket[] toSubpacketArray()
++    public UserAttributeSubpacket[] toSubpacketArray()
+     {
+         return packets;
+     }

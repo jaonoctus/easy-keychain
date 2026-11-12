@@ -1,0 +1,20 @@
+// The patched OpenPGP module of Bouncy Castle, see ../README.md. It is built standalone as
+// ':bcpg' from the root settings.gradle, against the released provider jars.
+apply plugin: 'java-library'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// upstream targets Java 8; don't let newer JDKs warn about that on every build
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-Xlint:-options'
+}
+
+dependencies {
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.86'
+    implementation 'org.bouncycastle:bcutil-jdk18on:1.86'
+
+    testImplementation 'junit:junit:4.13.2'
+}

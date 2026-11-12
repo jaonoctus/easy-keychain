@@ -2,7 +2,7 @@ rootProject.name = 'easy-keychain'
 
 include ':EasyKeychain'
 include ':nfcsweetspot'
-// only the OpenPGP module of the patched Bouncy Castle fork, built standalone
+// the patched OpenPGP module of Bouncy Castle, see extern/bouncycastle/README.md
 include ':bcpg'
 project(':bcpg').projectDir = new File('extern/bouncycastle/pg')
 include ':extern:MaterialChipsInput'
