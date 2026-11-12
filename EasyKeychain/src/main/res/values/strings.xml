@@ -1565,10 +1565,19 @@
     <string name="notify_channel_permission">Permission requests</string>
     <string name="notify_channel_passcache">Passphrase cache</string>
     <string name="notify_channel_orbot">Orbot status</string>
+    <string name="notify_channel_pgp_detected">Detected encrypted messages</string>
+
+    <string name="notify_pgp_detected_title">Encrypted message detected</string>
+    <string name="notify_pgp_detected_text">Tap to decrypt the PGP message.</string>
 
     <string name="label_obfuscate_pgp_markers">Obfuscate PGP markers</string>
     <string name="snack_obfuscate_markers_on">PGP markers will be replaced by a hex pattern. Only EasyKeychain and Easy PGP can read such messages.</string>
     <string name="snack_obfuscate_markers_off">Messages will have regular PGP markers.</string>
+    <string name="label_notification_watcher">Detect encrypted messages in notifications</string>
+    <string name="label_notification_watcher_summary">Offer to decrypt PGP messages that show up in the notifications of other apps. This requires access to all of your notifications. They are checked on this device only and never stored.</string>
+    <string name="notification_watcher_service_label">Encrypted message detection</string>
+    <string name="notification_watcher_grant_access">Allow notification access for EasyKeychain to finish turning this on.</string>
+    <string name="notification_watcher_no_settings">Could not open the notification access settings on this device.</string>
 
     <string name="keychoice_cannot_encrypt">This key cannot be used for encryption!</string>
     <string name="keychoice_cannot_sign">This key cannot be used for signing!</string>

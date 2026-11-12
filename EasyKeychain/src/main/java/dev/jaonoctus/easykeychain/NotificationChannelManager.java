@@ -14,6 +14,7 @@ public class NotificationChannelManager {
     public static final String PERMISSION_REQUESTS = "permissionRequests";
     public static final String PASSPHRASE_CACHE = "passphraseCache";
     public static final String ORBOT = "orbot";
+    public static final String PGP_DETECTED = "pgpDetected";
 
     private final Context context;
     private final NotificationManager notificationManager;
@@ -39,6 +40,7 @@ public class NotificationChannelManager {
         createNotificationChannel(PERMISSION_REQUESTS, R.string.notify_channel_permission, NotificationManager.IMPORTANCE_MIN);
         createNotificationChannel(PASSPHRASE_CACHE, R.string.notify_channel_passcache, NotificationManager.IMPORTANCE_NONE);
         createNotificationChannel(ORBOT, R.string.notify_channel_orbot, NotificationManager.IMPORTANCE_DEFAULT);
+        createNotificationChannel(PGP_DETECTED, R.string.notify_channel_pgp_detected, NotificationManager.IMPORTANCE_HIGH);
     }
 
     @RequiresApi(api = VERSION_CODES.O)

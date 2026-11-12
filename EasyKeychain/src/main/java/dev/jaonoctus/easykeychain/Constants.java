@@ -106,6 +106,9 @@ public final class Constants {
         public static final int PASSPHRASE_CACHE = 1;
         public static final int KEYSERVER_SYNC_FAIL_ORBOT = 2;
         public static final int KEYSERVER_SYNC = 3;
+        /** Detected PGP messages each get an id in [BASE, BASE + RANGE). */
+        public static final int PGP_DETECTED_BASE = 1000;
+        public static final int PGP_DETECTED_RANGE = 100000;
     }
 
     public static final class Pref {
@@ -142,6 +145,7 @@ public final class Constants {
         public static final String SYNC_WORK_UUID = "syncWorkUuid";
         // other settings
         public static final String EXPERIMENTAL_USB_ALLOW_UNTESTED = "experimentalUsbAllowUntested";
+        public static final String EXPERIMENTAL_NOTIFICATION_WATCHER = "experimentalNotificationWatcher";
         public static final String EXPERIMENTAL_SMARTPGP_VERIFY_AUTHORITY = "smartpgp_authorities_pref";
         public static final String EXPERIMENTAL_SMARTPGP_AUTHORITIES = "smartpgp_authorities";
 
