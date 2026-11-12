@@ -559,6 +559,7 @@ public class KeyWritableRepository extends KeyRepository {
             return false;
         }
         autocryptPeerDao.deleteByMasterKeyId(masterKeyId);
+        getDatabase().getKeyNicknamesQueries().deleteByMasterKeyId(masterKeyId);
 
         getDatabase().getKeyRingsPublicQueries().deleteByMasterKeyId(masterKeyId);
         int deletedRows = getDatabase().getUtilQueries().selectChanges().executeAsOne().intValue();

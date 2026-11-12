@@ -48,7 +48,7 @@ import timber.log.Timber;
  */
 public class KeychainDatabase {
     private static final String DATABASE_NAME = "openkeychain.db";
-    private static final int DATABASE_VERSION = 36;
+    private static final int DATABASE_VERSION = 37;
     private final SupportSQLiteOpenHelper supportSQLiteOpenHelper;
     private final Database sqldelightDatabase;
 
@@ -142,7 +142,9 @@ public class KeychainDatabase {
         switch (oldVersion) {
             case 34:
             case 35:
-                // nothing
+            case 36:
+                db.execSQL("CREATE TABLE IF NOT EXISTS key_nicknames ("
+                        + "master_key_id INTEGER PRIMARY KEY, nickname TEXT NOT NULL)");
         }
         // recreate the unified key view on any upgrade
         recreateDatabaseViews(db);
@@ -161,11 +163,13 @@ public class KeychainDatabase {
                                 (EXISTS (SELECT * FROM keys AS k WHERE k.master_key_id = keys.master_key_id AND k.can_sign != 0)) AS has_sign_key,
                                 (EXISTS (SELECT * FROM keys AS k WHERE k.master_key_id = keys.master_key_id AND k.can_authenticate != 0)) AS has_auth_key,
                                 GROUP_CONCAT(DISTINCT aTI.package_name) AS autocrypt_package_names_csv,
-                                GROUP_CONCAT(user_packets.user_id, '|||') AS user_id_list
+                                GROUP_CONCAT(user_packets.user_id, '|||') AS user_id_list,
+                                key_nicknames.nickname
                             FROM keys
                                  INNER JOIN user_packets ON ( keys.master_key_id = user_packets.master_key_id AND user_packets.type IS NULL AND (user_packets.rank = 0 OR user_packets.is_revoked = 0))
                                  LEFT JOIN certs ON ( keys.master_key_id = certs.master_key_id AND certs.verified = 1 )
                                  LEFT JOIN autocrypt_peers AS aTI ON ( aTI.master_key_id = keys.master_key_id )
+                                 LEFT JOIN key_nicknames ON ( key_nicknames.master_key_id = keys.master_key_id )
                             WHERE keys.rank = 0
                             GROUP BY keys.master_key_id;""");
         db.execSQL("DROP VIEW IF EXISTS validKeys");

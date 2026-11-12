@@ -112,6 +112,10 @@
     <string name="menu_certify_fingerprint">"Confirm with fingerprint"</string>
     <string name="menu_share_log">"Share log"</string>
     <string name="menu_change_password">"Change password"</string>
+    <string name="menu_key_set_nickname">"Set nickname"</string>
+    <string name="key_nickname_message">"A name for this key that only you see. It is kept on this device and is not part of the key."</string>
+    <string name="key_nickname_hint">"Nickname"</string>
+    <string name="key_nickname_remove">"Remove"</string>
     <string name="menu_advanced">"Advanced"</string>
 
     <!-- label -->

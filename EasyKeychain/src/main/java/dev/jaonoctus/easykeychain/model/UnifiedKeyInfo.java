@@ -18,11 +18,12 @@ public abstract class UnifiedKeyInfo {
             boolean is_revoked, boolean is_secure, boolean can_certify,
             CanonicalizedKeyRing.VerificationStatus verified, boolean has_duplicate,
             boolean has_any_secret, boolean has_encrypt_key, boolean has_sign_key,
-            boolean has_auth_key, String autocrypt_package_names_csv, String user_id_list) {
+            boolean has_auth_key, String autocrypt_package_names_csv, String user_id_list,
+            String nickname) {
         return new AutoValue_UnifiedKeyInfo(master_key_id, fingerprint, min, user_id, name, email,
                 comment, creation, expiry, is_revoked, is_secure, can_certify, verified,
                 has_duplicate, has_any_secret, has_encrypt_key, has_sign_key, has_auth_key,
-                autocrypt_package_names_csv, user_id_list);
+                autocrypt_package_names_csv, user_id_list, nickname);
     }
 
     private List<String> autocryptPackageNames;
@@ -76,6 +77,17 @@ public abstract class UnifiedKeyInfo {
     @Nullable
     public abstract String user_id_list();
 
+    /** A name the user gave this key locally. It is not part of the key. */
+    @Nullable
+    public abstract String nickname();
+
+    /** The nickname if the user set one, the name from the primary user id otherwise. */
+    @Nullable
+    public String displayName() {
+        String nickname = nickname();
+        return nickname != null && !nickname.isEmpty() ? nickname : name();
+    }
+
     public boolean is_expired() {
         Long expiry = expiry();
         return expiry != null && expiry * 1000 < System.currentTimeMillis();
@@ -100,6 +112,9 @@ public abstract class UnifiedKeyInfo {
             cachedUidSearchString = user_id_list();
             if (cachedUidSearchString == null) {
                 cachedUidSearchString = "";
+            }
+            if (nickname() != null) {
+                cachedUidSearchString = nickname() + "|||" + cachedUidSearchString;
             }
             cachedUidSearchString = cachedUidSearchString.toLowerCase();
         }
