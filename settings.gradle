@@ -5,7 +5,7 @@ include ':nfcsweetspot'
 // only the OpenPGP module of the patched Bouncy Castle fork, built standalone
 include ':bcpg'
 project(':bcpg').projectDir = new File('extern/bouncycastle/pg')
-include ':extern:MaterialChipsInput:library'
+include ':extern:MaterialChipsInput'
 
 // Workaround for Android Gradle Plugin 2.0, as described in http://stackoverflow.com/a/36544850
 //include ':extern:openpgp-api-lib:openpgp-api'
