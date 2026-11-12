@@ -5,8 +5,10 @@
         android:summary="@string/label_experimental_settings_desc_summary"
         android:title="@string/label_experimental_settings_desc_title" />
 
+    <!-- The default must be the same as Constants.Pref.Theme.DEFAULT: a ListPreference saves its
+         default value as soon as it is shown, so just opening this screen stores it. -->
     <ListPreference
-        android:defaultValue="light"
+        android:defaultValue="auto"
         android:dialogTitle="@string/label_theme"
         android:entries="@array/theme_entries"
         android:entryValues="@array/theme_values"
