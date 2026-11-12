@@ -847,11 +847,14 @@
             android:name=".service.PassphraseCacheService"
             android:exported="false"
             android:foregroundServiceType="specialUse"
-            android:process=":passphrase_cache" />
+            android:process=":passphrase_cache">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the passphrases the user chose to remember in memory, never on storage, and shows a notification to clear them" />
+        </service>
         <service
             android:name=".remote.CryptoInputParcelCacheService"
             android:exported="false"
-            android:foregroundServiceType="specialUse"
             android:process=":remote_api" />
 
         <provider
@@ -973,7 +976,6 @@
             android:enabled="true"
             android:exported="true"
             android:process=":remote_api"
-            android:foregroundServiceType="specialUse"
             tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="org.openintents.openpgp.IOpenPgpService" />
@@ -987,7 +989,6 @@
             android:enabled="true"
             android:exported="true"
             android:process=":remote_api_2"
-            android:foregroundServiceType="specialUse"
             tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="org.openintents.openpgp.IOpenPgpService2" />
@@ -1001,7 +1002,6 @@
             android:enabled="true"
             android:exported="true"
             android:process=":remote_ssh_api"
-            android:foregroundServiceType="specialUse"
             tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="org.openintents.ssh.authentication.ISshAuthenticationService" />
