@@ -48,11 +48,16 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
@@ -66,6 +71,7 @@ import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import dev.jaonoctus.easykeychain.Constants;
 import dev.jaonoctus.easykeychain.R;
+import dev.jaonoctus.easykeychain.daos.KeyNicknameDao;
 import dev.jaonoctus.easykeychain.daos.KeyRepository;
 import dev.jaonoctus.easykeychain.daos.KeyRepository.NotFoundException;
 import dev.jaonoctus.easykeychain.keyimport.HkpKeyserverAddress;
@@ -303,6 +309,9 @@ public class ViewKeyActivity extends BaseSecurityTokenActivity {
         } else if (itemId == R.id.menu_key_view_backup) {
             startPassphraseActivity(REQUEST_BACKUP);
             return true;
+        } else if (itemId == R.id.menu_key_set_nickname) {
+            showSetNicknameDialog();
+            return true;
         } else if (itemId == R.id.menu_key_view_delete) {
             deleteKey();
             return true;
@@ -319,6 +328,43 @@ public class ViewKeyActivity extends BaseSecurityTokenActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showSetNicknameDialog() {
+        if (unifiedKeyInfo == null) {
+            return;
+        }
+        final long masterKeyId = unifiedKeyInfo.master_key_id();
+        final KeyNicknameDao keyNicknameDao = KeyNicknameDao.create(this);
+
+        final EditText nicknameInput = new EditText(this);
+        nicknameInput.setSingleLine(true);
+        nicknameInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        nicknameInput.setFilters(new InputFilter[] { new InputFilter.LengthFilter(KeyNicknameDao.MAX_LENGTH) });
+        nicknameInput.setHint(R.string.key_nickname_hint);
+        String currentNickname = unifiedKeyInfo.nickname();
+        if (currentNickname != null) {
+            nicknameInput.setText(currentNickname);
+            nicknameInput.setSelection(currentNickname.length());
+        }
+
+        int padding = (int) (20 * getResources().getDisplayMetrics().density);
+        FrameLayout container = new FrameLayout(this);
+        container.setPadding(padding, padding / 2, padding, 0);
+        container.addView(nicknameInput);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle(R.string.menu_key_set_nickname)
+                .setMessage(R.string.key_nickname_message)
+                .setView(container)
+                .setPositiveButton(android.R.string.ok,
+                        (dialog, which) -> keyNicknameDao.setNickname(masterKeyId, nicknameInput.getText().toString()))
+                .setNegativeButton(android.R.string.cancel, null);
+        if (currentNickname != null) {
+            builder.setNeutralButton(R.string.key_nickname_remove,
+                    (dialog, which) -> keyNicknameDao.setNickname(masterKeyId, null));
+        }
+        builder.show();
     }
 
     @Override
@@ -615,7 +661,7 @@ public class ViewKeyActivity extends BaseSecurityTokenActivity {
 
         this.unifiedKeyInfo = unifiedKeyInfo;
 
-        String name = unifiedKeyInfo.name();
+        String name = unifiedKeyInfo.displayName();
         boolean isAnonymousKey = name == null && unifiedKeyInfo.email() == null;
         if (isAnonymousKey) {
             String readableKeyId = KeyFormattingUtils.beautifyKeyId(unifiedKeyInfo.master_key_id());
