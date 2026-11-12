@@ -3,4 +3,5 @@
     <item name="tag_mki" type="id" />
     <item name="tag_rank" type="id" />
     <item name="tag_certifierId" type="id" />
+    <item name="edge_to_edge_applied" type="id" />
 </resources>
