@@ -6,8 +6,8 @@ android {
         minSdkVersion 14
         versionCode 3
         versionName "3.0"
-        namespace 'org.openintents.ssh.authentication'
-        if (project.hasProperty('compileSdkVersion')) {
+        namespace = 'org.openintents.ssh.authentication'
+        if (rootProject.ext.has('compileSdkVersion')) {
             compileSdk rootProject.ext.compileSdkVersion
         } else {
             compileSdk 28
@@ -16,10 +16,10 @@ android {
 
     // Do not abort build if lint finds errors
     lintOptions {
-        abortOnError false
+        abortOnError = false
     }
     buildFeatures {
-        aidl true
+        aidl = true
     }
 }
 
