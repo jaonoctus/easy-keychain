@@ -37,7 +37,9 @@ import android.text.TextUtils;
 import android.webkit.MimeTypeMap;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPDataValidationException;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -61,6 +63,7 @@ import org.openintents.openpgp.OpenPgpMetadata;
 import dev.jaonoctus.easykeychain.Constants;
 import dev.jaonoctus.easykeychain.Constants.key;
 import dev.jaonoctus.easykeychain.R;
+import dev.jaonoctus.easykeychain.model.UnifiedKeyInfo;
 import dev.jaonoctus.easykeychain.daos.KeyRepository;
 import dev.jaonoctus.easykeychain.daos.KeyWritableRepository;
 import dev.jaonoctus.easykeychain.operations.BaseOperation;
@@ -632,6 +635,30 @@ public class PgpDecryptVerifyOperation extends BaseOperation<PgpDecryptVerifyInp
                     break;
                 }
 
+                if (subKeyId == HIDDEN_RECIPIENT_KEY_ID) {
+                    // The sender hid the recipient (gpg -R / --throw-keyids), so there is no key
+                    // id to look up. Find out by trying the secret keys we have.
+                    HiddenRecipientKey match = findKeyForHiddenRecipient(
+                            input, cryptoInput, encData, requirePassphraseBuilder);
+                    if (match == null) {
+                        log.add(LogType.MSG_DC_ASKIP_NO_KEY, indent + 1);
+                        continue;
+                    }
+
+                    KeySecurityProblem keySecurityProblem =
+                            PgpSecurityConstants.checkForSecurityProblems(match.key);
+                    if (keySecurityProblem != null) {
+                        log.add(LogType.MSG_DC_INSECURE_KEY, indent + 1);
+                        result.encryptionKeySecurityProblem = keySecurityProblem;
+                    }
+
+                    asymmetricPacketFound = true;
+                    encryptedDataAsymmetric = encData;
+                    decryptionKey = match.key;
+                    passphrase = match.passphrase;
+                    break;
+                }
+
                 try {
                     // get actual keyring object based on master key id
                     Long masterKeyId = mKeyRepository.getMasterKeyIdBySubkeyId(subKeyId);
@@ -877,6 +904,109 @@ public class PgpDecryptVerifyOperation extends BaseOperation<PgpDecryptVerifyInp
 
         return result;
 
+    }
+
+    /** Key id of a session key packet that doesn't name its recipient. */
+    private static final long HIDDEN_RECIPIENT_KEY_ID = 0L;
+
+    private static class HiddenRecipientKey {
+        final CanonicalizedSecretKey key;
+        final Passphrase passphrase;
+
+        HiddenRecipientKey(CanonicalizedSecretKey key, Passphrase passphrase) {
+            this.key = key;
+            this.passphrase = passphrase;
+        }
+    }
+
+    /**
+     * Finds the secret key a session key packet with a hidden recipient was encrypted to, by trying
+     * to decrypt it with every eligible secret key, as gpg does.
+     * <p>
+     * Only keys whose passphrase is already at hand are tried. Keys that would need a passphrase
+     * prompt are added to requirePassphraseBuilder instead, so the caller can ask for one if no
+     * other key fits. Keys on security tokens are not tried, that would take a card operation each.
+     *
+     * @return the matching key together with its passphrase, or null if none of the tried keys fit
+     */
+    @Nullable
+    private HiddenRecipientKey findKeyForHiddenRecipient(PgpDecryptVerifyInputParcel input,
+            CryptoInputParcel cryptoInput, PGPPublicKeyEncryptedData encData,
+            RequireAnyDecryptPassphraseBuilder requirePassphraseBuilder) {
+        for (UnifiedKeyInfo keyInfo : mKeyRepository.getAllUnifiedKeyInfoWithSecret()) {
+            long masterKeyId = keyInfo.master_key_id();
+            if (input.getAllowedKeyIds() != null && !input.getAllowedKeyIds().contains(masterKeyId)) {
+                continue;
+            }
+
+            CanonicalizedSecretKeyRing secretKeyRing;
+            try {
+                secretKeyRing = mKeyRepository.getCanonicalizedSecretKeyRing(masterKeyId);
+            } catch (KeyWritableRepository.NotFoundException e) {
+                continue;
+            }
+
+            for (CanonicalizedSecretKey candidate : secretKeyRing.secretKeyIterator()) {
+                long subKeyId = candidate.getKeyId();
+                if (!candidate.canEncrypt()
+                        || !isSameKeyAlgorithmFamily(candidate.getAlgorithm(), encData.getAlgorithm())) {
+                    continue;
+                }
+
+                try {
+                    SecretKeyType secretKeyType = mKeyRepository.getSecretKeyType(subKeyId);
+                    if (!secretKeyType.isUsable() || secretKeyType == SecretKeyType.DIVERT_TO_CARD) {
+                        continue;
+                    }
+
+                    Passphrase passphrase;
+                    if (secretKeyType == SecretKeyType.PASSPHRASE_EMPTY) {
+                        passphrase = new Passphrase("");
+                    } else if (cryptoInput.hasPassphraseForSubkey(subKeyId)) {
+                        passphrase = cryptoInput.getPassphrase();
+                    } else {
+                        passphrase = getCachedPassphrase(subKeyId);
+                        if (passphrase == null) {
+                            requirePassphraseBuilder.add(masterKeyId, subKeyId);
+                            continue;
+                        }
+                    }
+
+                    if (!candidate.unlock(passphrase)) {
+                        // wrong passphrase, this key remains a candidate
+                        requirePassphraseBuilder.add(masterKeyId, subKeyId);
+                        continue;
+                    }
+
+                    // throws unless the session key decrypts and passes its checksum
+                    encData.getSessionKey(candidate.getCachingDecryptorFactory(cryptoInput));
+                    return new HiddenRecipientKey(candidate, passphrase);
+                } catch (PGPException | PgpGeneralException | KeyWritableRepository.NotFoundException
+                        | PassphraseCacheInterface.NoSecretKeyException | RuntimeException e) {
+                    // not the key this packet was encrypted to
+                    Timber.d("Hidden recipient: key %s does not fit", KeyFormattingUtils.convertKeyIdToHex(subKeyId));
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static boolean isSameKeyAlgorithmFamily(int keyAlgorithm, int packetAlgorithm) {
+        return normalizeKeyAlgorithm(keyAlgorithm) == normalizeKeyAlgorithm(packetAlgorithm);
+    }
+
+    private static int normalizeKeyAlgorithm(int algorithm) {
+        switch (algorithm) {
+            case PublicKeyAlgorithmTags.RSA_GENERAL:
+            case PublicKeyAlgorithmTags.RSA_ENCRYPT:
+                return PublicKeyAlgorithmTags.RSA_GENERAL;
+            case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
+            case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
+                return PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT;
+            default:
+                return algorithm;
+        }
     }
 
     /**

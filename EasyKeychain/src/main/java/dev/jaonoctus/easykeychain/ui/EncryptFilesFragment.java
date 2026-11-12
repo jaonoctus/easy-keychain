@@ -211,6 +211,8 @@ public class EncryptFilesFragment
             mSelfEncrypt = prefs.getFilesEncryptToSelf();
         }
 
+        mHiddenRecipients = prefs.getEncryptHiddenRecipients();
+
         if (args.containsKey(ARG_ENCRYPT_FILENAMES)) {
             mEncryptFilenames = args.getBoolean(ARG_ENCRYPT_FILENAMES, false);
         } else {
@@ -345,6 +347,7 @@ public class EncryptFilesFragment
         menu.findItem(R.id.check_use_armor).setChecked(mUseArmor);
         menu.findItem(R.id.check_enable_compression).setChecked(mUseCompression);
         menu.findItem(R.id.check_enable_self_encrypt).setChecked(mSelfEncrypt);
+        menu.findItem(R.id.check_hidden_recipients).setChecked(mHiddenRecipients);
         menu.findItem(R.id.check_encrypt_filenames).setChecked(mEncryptFilenames);
     }
 
@@ -372,6 +375,13 @@ public class EncryptFilesFragment
             toggleEnableCompression(item, !item.isChecked());
         } else if (itemId == R.id.check_enable_self_encrypt) {
             toggleEnableSelfEncrypt(item, !item.isChecked());
+        } else if (itemId == R.id.check_hidden_recipients) {
+            mHiddenRecipients = !item.isChecked();
+            item.setChecked(mHiddenRecipients);
+            Preferences.getPreferences(getActivity()).setEncryptHiddenRecipients(mHiddenRecipients);
+            Notify.create(getActivity(), mHiddenRecipients
+                    ? R.string.snack_hidden_recipients_on
+                    : R.string.snack_hidden_recipients_off, Style.OK).show(this);
         } else if (itemId == R.id.check_encrypt_filenames) {
             toggleEncryptFilenamesCheck(item, !item.isChecked());
         } else {

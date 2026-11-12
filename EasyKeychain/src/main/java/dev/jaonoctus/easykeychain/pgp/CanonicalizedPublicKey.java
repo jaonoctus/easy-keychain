@@ -77,6 +77,8 @@ public class CanonicalizedPublicKey extends UncachedPublicKey {
                 new JcePublicKeyKeyEncryptionMethodGenerator(mPublicKey);
         generator.setProvider(Constants.BOUNCY_CASTLE_PROVIDER_NAME);
         generator.setSessionKeyObfuscation(hiddenRecipients);
+        // like gpg -R: don't name the recipient key in the session key packet (key id 0)
+        generator.setUseWildcardRecipient(hiddenRecipients);
         return generator;
     }
 
