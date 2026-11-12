@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - easy-keychain
   pull_request:
     branches:
       - master
+      - easy-keychain
 
 jobs:
   BuildAndTest:
@@ -17,22 +19,24 @@ jobs:
         java_version: [21]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0 # 0 indicates all history
       - name: Install JDK ${{ matrix.java_version }}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: ${{ matrix.java_version }}
-      - name: Install Android SDK
-        uses: malinskiy/action-android/install-sdk@release/0.1.0
+      # No step to install the Android SDK: the hosted runners come with one (ANDROID_HOME) and
+      # with its licenses accepted, and the Android Gradle Plugin downloads the platform and
+      # build tools it is missing.
       - name: Build project
         run: ./gradlew assemble
       - name: Run tests
         run: ./gradlew :EasyKeychain:test
       - name: Archive UnitTest report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: UnitTest-report
