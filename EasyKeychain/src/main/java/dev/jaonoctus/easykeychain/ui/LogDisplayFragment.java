@@ -100,10 +100,9 @@ public class LogDisplayFragment extends RecyclerFragment<NestedLogAdapter>
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_log_display_export_log:
-                shareLog();
-                break;
+        int itemId = item.getItemId();
+        if (itemId == R.id.menu_log_display_export_log) {
+            shareLog();
         }
 
         return super.onOptionsItemSelected(item);

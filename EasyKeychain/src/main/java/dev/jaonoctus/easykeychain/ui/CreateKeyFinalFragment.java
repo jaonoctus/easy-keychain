@@ -172,16 +172,14 @@ public class CreateKeyFinalFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-
-            case R.id.menu_create_key_edit:
-                Intent edit = new Intent(getActivity(), EditKeyActivity.class);
-                edit.putExtra(EditKeyActivity.EXTRA_SAVE_KEYRING_PARCEL, mSaveKeyringParcel);
-                startActivityForResult(edit, REQUEST_EDIT_KEY);
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
+        int itemId = item.getItemId();
+        if (itemId == R.id.menu_create_key_edit) {
+            Intent edit = new Intent(getActivity(), EditKeyActivity.class);
+            edit.putExtra(EditKeyActivity.EXTRA_SAVE_KEYRING_PARCEL, mSaveKeyringParcel);
+            startActivityForResult(edit, REQUEST_EDIT_KEY);
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 

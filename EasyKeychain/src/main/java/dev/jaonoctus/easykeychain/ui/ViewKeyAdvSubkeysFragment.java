@@ -133,12 +133,12 @@ public class ViewKeyAdvSubkeysFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_action_mode_edit:
-                enterEditMode();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        int itemId = item.getItemId();
+        if (itemId == R.id.menu_action_mode_edit) {
+            enterEditMode();
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 
