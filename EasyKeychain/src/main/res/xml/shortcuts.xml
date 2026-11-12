@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_comment_text_grey600_24dp"
+        android:shortcutId="encrypt_text"
+        android:shortcutLongLabel="@string/btn_encrypt_text"
+        android:shortcutShortLabel="@string/btn_encrypt_text">
+        <intent
+            android:action="dev.jaonoctus.easykeychain.action.ENCRYPT_TEXT"
+            android:targetClass="dev.jaonoctus.easykeychain.ui.EncryptTextActivity"
+            android:targetPackage="dev.jaonoctus.easykeychain" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_folder_grey_24dp"
+        android:shortcutId="encrypt_files"
+        android:shortcutLongLabel="@string/btn_encrypt_files"
+        android:shortcutShortLabel="@string/btn_encrypt_files">
+        <intent
+            android:action="dev.jaonoctus.easykeychain.action.ENCRYPT_FILES"
+            android:targetClass="dev.jaonoctus.easykeychain.ui.EncryptFilesActivity"
+            android:targetPackage="dev.jaonoctus.easykeychain" />
+    </shortcut>
+</shortcuts>
