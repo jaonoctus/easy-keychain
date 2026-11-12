@@ -239,6 +239,14 @@ public class Preferences {
         return mSharedPreferences.getBoolean(Pref.ENCRYPT_HIDDEN_RECIPIENTS, false);
     }
 
+    public boolean isNotificationPermissionRequested() {
+        return mSharedPreferences.getBoolean(Pref.NOTIFICATION_PERMISSION_REQUESTED, false);
+    }
+
+    public void setNotificationPermissionRequested() {
+        mSharedPreferences.edit().putBoolean(Pref.NOTIFICATION_PERMISSION_REQUESTED, true).commit();
+    }
+
     public void setTextObfuscatePgpMarkers(boolean obfuscate) {
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         editor.putBoolean(Pref.TEXT_OBFUSCATE_PGP_MARKERS, obfuscate);

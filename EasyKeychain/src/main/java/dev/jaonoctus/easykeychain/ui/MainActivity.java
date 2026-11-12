@@ -18,7 +18,10 @@
 package dev.jaonoctus.easykeychain.ui;
 
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 
@@ -55,6 +58,22 @@ public class MainActivity extends BaseSecurityTokenActivity implements FabContai
     public static final String EXTRA_INIT_FRAG = "init_frag";
 
     public Drawer mDrawer;
+
+    /**
+     * Without this permission, Android 13 and newer silently hide all of our notifications. That
+     * includes the one of the passphrase cache, which is how the user sees that passphrases are
+     * being remembered and how they clear them. Asked once, after the first-time setup; the
+     * answer can be changed in the system settings.
+     */
+    private void requestNotificationPermissionOnce(Preferences prefs) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || prefs.isNotificationPermissionRequested()) {
+            return;
+        }
+        prefs.setNotificationPermissionRequested();
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] { Manifest.permission.POST_NOTIFICATIONS }, 0);
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -125,6 +144,8 @@ public class MainActivity extends BaseSecurityTokenActivity implements FabContai
             finish();
             return;
         }
+
+        requestNotificationPermissionOnce(prefs);
 
         // all further initialization steps are saved as instance state
         if (savedInstanceState != null) {
