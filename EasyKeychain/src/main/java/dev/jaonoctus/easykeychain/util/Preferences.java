@@ -229,6 +229,16 @@ public class Preferences {
         return mSharedPreferences.getBoolean(Pref.TEXT_SELF_ENCRYPT, true);
     }
 
+    public void setTextObfuscatePgpMarkers(boolean obfuscate) {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        editor.putBoolean(Pref.TEXT_OBFUSCATE_PGP_MARKERS, obfuscate);
+        editor.commit();
+    }
+
+    public boolean getTextObfuscatePgpMarkers() {
+        return mSharedPreferences.getBoolean(Pref.TEXT_OBFUSCATE_PGP_MARKERS, false);
+    }
+
     public String getTheme() {
         return mSharedPreferences.getString(Pref.THEME, Theme.DEFAULT);
     }
