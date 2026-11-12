@@ -19,11 +19,12 @@ import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSessionKey;
+import org.bouncycastle.openpgp.operator.AbstractPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 
 
-public class CachingDataDecryptorFactory implements PublicKeyDataDecryptorFactory
+public class CachingDataDecryptorFactory extends AbstractPublicKeyDataDecryptorFactory
 {
     private final PublicKeyDataDecryptorFactory mWrappedDecryptor;
     private final HashMap<ByteBuffer, byte[]> mSessionKeyCache;
@@ -65,7 +66,7 @@ public class CachingDataDecryptorFactory implements PublicKeyDataDecryptorFactor
     }
 
     @Override
-    public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData) throws PGPException {
+    public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData, int pkeskVersion) throws PGPException {
         ByteBuffer bi = ByteBuffer.wrap(secKeyData[0]);  // encoded MPI
         if (mSessionKeyCache.containsKey(bi)) {
             return mSessionKeyCache.get(bi);
@@ -75,7 +76,7 @@ public class CachingDataDecryptorFactory implements PublicKeyDataDecryptorFactor
             throw new IllegalStateException("tried to decrypt without wrapped decryptor, this is a bug!");
         }
 
-        byte[] sessionData = mWrappedDecryptor.recoverSessionData(keyAlgorithm, secKeyData);
+        byte[] sessionData = mWrappedDecryptor.recoverSessionData(keyAlgorithm, secKeyData, pkeskVersion);
         mSessionKeyCache.put(bi, sessionData);
         return sessionData;
     }
