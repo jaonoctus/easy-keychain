@@ -176,7 +176,10 @@ public final class Constants {
     }
 
     public static final class Defaults {
-        public static final String KEY_SERVERS = "hkps://keys.openpgp.org;hkp://zkaan2xfbuxia2wpf7ofnkbz6r5zdbbvxbunvp5g2iebopbfc4iqmbad.onion";
+        // Servers are separated by ",", a server's optional onion address follows after ";".
+        // The first one is the preferred server, used for search, updates and uploads.
+        public static final String KEY_SERVERS = "hkps://keyserver.ubuntu.com,"
+                + "hkps://keys.openpgp.org;hkp://zkaan2xfbuxia2wpf7ofnkbz6r5zdbbvxbunvp5g2iebopbfc4iqmbad.onion";
         public static final int PREF_CURRENT_VERSION = 10;
     }
 
