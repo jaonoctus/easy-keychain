@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP_DIR=../OpenKeychain/src/main
+APP_DIR=../EasyKeychain/src/main
 DRAWABLE_DIR=$APP_DIR/res/drawable
 MDPI_DIR=$APP_DIR/res/drawable-mdpi
 HDPI_DIR=$APP_DIR/res/drawable-hdpi
