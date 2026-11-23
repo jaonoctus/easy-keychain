@@ -1,20 +1,24 @@
 [//]: # (NOTE: Please put every sentence in its own line, Transifex puts every line in its own translation field!)
 
-[https://www.openkeychain.org](https://www.openkeychain.org)
+[https://github.com/jaonoctus/easy-keychain](https://github.com/jaonoctus/easy-keychain)
 
 EasyKeychain is an OpenPGP implementation for Android.
 It is a fork of [OpenKeychain](https://www.openkeychain.org), and is not affiliated with or endorsed by the OpenKeychain project.
-The people listed below are the developers of and contributors to OpenKeychain.
 
 License: GPLv3+
 
+## EasyKeychain Maintainer
+  * 'jaonoctus'
+
+EasyKeychain builds on the work of the developers of and contributors to OpenKeychain, who are listed below.
+
 [//]: # (NOTE: Alphabetic ordering)
 
-## Main Developers
+## OpenKeychain Main Developers
   * Dominik Schürmann (Maintainer)
   * Vincent Breitmoser
 
-## Top Contributors
+## OpenKeychain Top Contributors
   * Adithya Abraham Philip
   * Andrea Torlaschi
   * Arnaud Fontaine
@@ -25,7 +29,7 @@ License: GPLv3+
   * Tim Bray
   * Tobias Erthal
 
-## Occasional Contributors
+## OpenKeychain Occasional Contributors
   * Alex Fong Jie Wen
   * Andrea Torlaschi
   * Art O Cathain
